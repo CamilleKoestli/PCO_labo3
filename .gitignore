@@ -2,12 +2,14 @@
 labo3.pdf
 
 # Ignorer les dossiers de construction
-/build/
-/cmake-build-debug/
+code/build/
+code/cmake-build-debug/
 
 # Ignorer les fichiers de configuration IDE
-.idea/
+code/.idea/
 
 # Ignorer le fichier CMakeList.txt
-CMakeList.txt
+./code/CMakeLists.txt
+
+
 
