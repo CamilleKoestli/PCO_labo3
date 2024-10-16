@@ -1,1 +1,13 @@
+# Ignorer la consigne du laboratoire
 labo3.pdf
+
+# Ignorer les dossiers de construction
+/build/
+/cmake-build-debug/
+
+# Ignorer les fichiers de configuration IDE
+.idea/
+
+# Ignorer le fichier CMakeList.txt
+CMakeList.txt
+
