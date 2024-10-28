@@ -21,13 +21,37 @@ Ambulance::Ambulance(int uniqueId, int fund, std::vector<ItemType> resourcesSupp
 }
 
 void Ambulance::sendPatient(){
-    // TODO
+    // TODO a checker
+
+    // On choisit un hopital de manière aléatoire
+    Seller* hospital = chooseRandomSeller(hospitals);
+
+    // Vérification si l'hôpital prend le patient
+    int patientsToSend = std::min(stocks[ItemType::PatientSick], 1); // envoie un patient à la fois
+    if (patientsToSend > 0) {
+        int bill = hospital->request(ItemType::PatientSick, patientsToSend);
+        if (bill > 0) {
+            // Acceptation du patient
+            stocks[ItemType::PatientSick] -= patientsToSend;
+            money += bill;
+            nbTransfer++;
+            interface->consoleAppendText(uniqueId, "Patient sent to hospital.");
+        } else {
+            interface->consoleAppendText(uniqueId, "No hospital could accept the patient.");
+        }
+    }
+
 }
 
 void Ambulance::run() {
     interface->consoleAppendText(uniqueId, "[START] Ambulance routine");
 
     while (true /*TODO*/) {
+
+        // S'il y a des patients malades
+        if (getNumberPatients() > 0) {  
+            sendPatient();
+        }
     
         sendPatient();
         
