@@ -32,8 +32,8 @@ bool Clinic::verifyResources()
 int Clinic::request(ItemType what, int qty)
 {
     // TODO à checker
-    // Vérifie que le type de patient demandé est malade
-    if (what == ItemType::PatientSick){
+    // Vérifie que le type de patient demandé est soigné
+    if (what == ItemType::PatientHealed){
         return qty;
     }
     return 0;
