@@ -3,6 +3,7 @@
 
 #include <QString>
 #include <QStringBuilder>
+#include <pcosynchro/pcomutex.h>
 #include <map>
 #include <vector>
 #include "costs.h"
@@ -76,6 +77,7 @@ public:
     int getUniqueId() { return uniqueId; }
 
 protected:
+    PcoMutex mutex;
     /**
      * @brief stocks : Type, Quantité
      */
