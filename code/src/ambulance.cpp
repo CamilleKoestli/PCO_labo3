@@ -23,26 +23,39 @@ Ambulance::Ambulance(int uniqueId, int fund, std::vector<ItemType> resourcesSupp
 void Ambulance::sendPatient(){
     // TODO a checker
 
-    // On choisit un hopital de manière aléatoire
+    if (hospitals.empty()) {
+        interface->consoleAppendText(uniqueId, "No hospitals available");
+        return;
+    }
+
+    // Choose a random hospital
     Seller* hospital = chooseRandomSeller(hospitals);
 
     // Vérification si l'hôpital prend le patient
-    int patientsToSend = std::min(stocks[ItemType::PatientSick], 1);
+    if(stocks[ItemType::PatientSick] == 0){
+        interface->consoleAppendText(uniqueId, "No patients to send");
+        return;
+    } else
+    int patientsToSend;
+    
+    mutex.lock();
     if (patientsToSend > 0) {
         int bill = hospital->request(ItemType::PatientSick, patientsToSend);
+        
         if (bill > 0) {
-            // Acceptation du patient
-            mutex.lock();
             stocks[ItemType::PatientSick] -= patientsToSend;
             money += bill;
             nbTransfer++;
-            mutex.unlock();
+            interface->updateFund(uniqueId, money);
+            interface->updateStock(uniqueId, &stocks);
             interface->consoleAppendText(uniqueId, "Patient sent to hospital.");
         } else {
             interface->consoleAppendText(uniqueId, "No hospital could accept the patient.");
         }
+    } else {
+        interface->consoleAppendText(uniqueId, "No patients to send");
     }
-
+    mutex.unlock();
 }
 
 void Ambulance::run() {

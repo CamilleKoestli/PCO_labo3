@@ -20,11 +20,14 @@ Hospital::Hospital(int uniqueId, int fund, int maxBeds)
 
 int Hospital::request(ItemType what, int qty){
     // TODO 
+
     return 0;
 }
 
 void Hospital::freeHealedPatient() {
     // TODO 
+
+
 }
 
 void Hospital::transferPatientsFromClinic() {
@@ -33,7 +36,18 @@ void Hospital::transferPatientsFromClinic() {
 
 int Hospital::send(ItemType it, int qty, int bill) {
     // TODO
-    return 0;
+    mutex.lock();
+    if (currentBeds + qty <= maxBeds && money >= bill) {
+        for(int i = 0; i < qty; i++) {
+            patients.push_back(Patient(it));
+        }
+        money -= bill;
+        currentBeds += qty;
+        mutex.unlock();
+        return 1; // success
+    }
+    mutex.unlock();
+    return 0; // fail
 }
 
 void Hospital::run()
