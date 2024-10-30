@@ -9,7 +9,8 @@ code/cmake-build-debug/
 code/.idea/
 
 # Ignorer le fichier CMakeList.txt
-./code/CMakeLists.txt
+**/CMakeLists.txt
 
 
 
+.idea

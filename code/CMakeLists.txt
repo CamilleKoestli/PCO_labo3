@@ -61,7 +61,7 @@ set(FORMS
 add_executable(pco_hospital ${SOURCES} ${HEADERS})
 
 if (Qt5_FOUND)
-    target_link_libraries(pco_hospital PRIVATE Qt5::Core Qt5::Gui Qt5::Widgets -lpcosynchro)
+    target_link_libraries(pco_hospital PRIVATE Qt5::Core Qt5::Gui Qt5::Widgets -lpcosynchro -pthread)
 else()
     target_link_libraries(pco_hospital PRIVATE Qt6::Core Qt6::Gui Qt6::Widgets -lpcosynchro)
 endif()
@@ -97,7 +97,7 @@ set(HEADERS_TESTS
 add_executable(pco_hospital_tests ${SOURCES_TESTS} ${HEADERS_TESTS})
 
 if (Qt5_FOUND)
-    target_link_libraries(pco_hospital_tests PRIVATE gtest Qt5::Core Qt5::Gui Qt5::Test Qt5::Widgets -lpcosynchro)
+    target_link_libraries(pco_hospital_tests PRIVATE gtest Qt5::Core Qt5::Gui Qt5::Test Qt5::Widgets -lpcosynchro -pthread)
 else()
     target_link_libraries(pco_hospital_tests PRIVATE gtest Qt6::Core Qt6::Gui Qt6::Test Qt6::Widgets -lpcosynchro)
 endif()
