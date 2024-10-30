@@ -31,16 +31,10 @@ bool Clinic::verifyResources()
 
 int Clinic::request(ItemType what, int qty)
 {
-    // TODO a checker
-
-    // Vérification si on a suffisemment de quantité
-    if (stocks[what] >= qty)
-    {
-        stocks[what] -= qty;
-        int cost = getCostPerUnit(what) * qty;
-        money += cost;
-        interface->updateFund(uniqueId, money);
-        return cost;
+    // TODO à checker
+    // Vérifie que le type de patient demandé est malade
+    if (what == ItemType::PatientSick){
+        return qty;
     }
     return 0;
 }
@@ -51,15 +45,17 @@ void Clinic::treatPatient()
 
     if (verifyResources())
     {
+        mutex.lock();
         stocks[ItemType::PatientSick]--;
         stocks[ItemType::PatientHealed]++;
         nbTreated++;
+        mutex.unlock();
 
         // Temps simulant un traitement
         interface->simulateWork();
 
         // TODO
-        interface->consoleAppendText(uniqueId, "Clinic have healed a new patient");
+        interface->consoleAppendText(uniqueId, "Clinic have healed a patient");
         
         interface->updateStock(uniqueId, &stocks);
     }
@@ -76,8 +72,10 @@ void Clinic::orderResources()
             int cost = supplier->request(item, 1);  
             
             if (cost > 0) {
+                mutex.lock();
                 stocks[item]++;  
                 money -= cost;  
+                mutex.unlock();
                 interface->updateFund(uniqueId, money);
                 interface->consoleAppendText(uniqueId, "Ordered resources from supplier");
             } else {
@@ -96,7 +94,7 @@ void Clinic::run()
     }
     interface->consoleAppendText(uniqueId, "[START] Factory routine");
 
-    while (true /*TODO*/)
+    while (PcoThread::thisThread()->stopRequested()/*true TODO*/)
     {
 
         if (verifyResources())

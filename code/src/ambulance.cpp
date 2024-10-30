@@ -27,14 +27,16 @@ void Ambulance::sendPatient(){
     Seller* hospital = chooseRandomSeller(hospitals);
 
     // Vérification si l'hôpital prend le patient
-    int patientsToSend = std::min(stocks[ItemType::PatientSick], 1); // envoie un patient à la fois
+    int patientsToSend = std::min(stocks[ItemType::PatientSick], 1);
     if (patientsToSend > 0) {
         int bill = hospital->request(ItemType::PatientSick, patientsToSend);
         if (bill > 0) {
             // Acceptation du patient
+            mutex.lock();
             stocks[ItemType::PatientSick] -= patientsToSend;
             money += bill;
             nbTransfer++;
+            mutex.unlock();
             interface->consoleAppendText(uniqueId, "Patient sent to hospital.");
         } else {
             interface->consoleAppendText(uniqueId, "No hospital could accept the patient.");
@@ -46,7 +48,7 @@ void Ambulance::sendPatient(){
 void Ambulance::run() {
     interface->consoleAppendText(uniqueId, "[START] Ambulance routine");
 
-    while (true /*TODO*/) {
+    while (!PcoThread::thisThread()->stopRequested()/*true TODO*/) {
 
         // S'il y a des patients malades
         if (getNumberPatients() > 0) {  
