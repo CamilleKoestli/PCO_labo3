@@ -34,20 +34,29 @@ void Hospital::transferPatientsFromClinic() {
     // TODO
 }
 
+
 int Hospital::send(ItemType it, int qty, int bill) {
     // TODO
-    mutex.lock();
-    if (currentBeds + qty <= maxBeds && money >= bill) {
-        for(int i = 0; i < qty; i++) {
-            patients.push_back(Patient(it));
+    // Si le patient est malade, vérification lit disponible et fonds suffisants
+    if (it == ItemType::PatientSick) {
+        if (currentBeds + qty <= maxBeds && money >= bill) {
+            money -= bill;      
+            currentBeds += qty;   
+            mutex.unlock();
+            return bill;         
         }
-        money -= bill;
-        currentBeds += qty;
-        mutex.unlock();
-        return 1; // success
+    } 
+    // Si le patient est guéri, réduire les lits occupés
+    else if (it == ItemType::PatientHealed) {
+        if (currentBeds >= qty) { 
+            currentBeds -= qty;   
+            mutex.unlock();
+            return bill;  
+        }
     }
+    
     mutex.unlock();
-    return 0; // fail
+    return 0; // Échec de la transaction
 }
 
 void Hospital::run()

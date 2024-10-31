@@ -35,7 +35,8 @@ void Ambulance::sendPatient(){
     if(stocks[ItemType::PatientSick] == 0){
         interface->consoleAppendText(uniqueId, "No patients to send");
         return;
-    } else
+    } 
+
     int patientsToSend;
     
     mutex.lock();
