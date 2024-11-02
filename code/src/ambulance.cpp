@@ -22,6 +22,7 @@ Ambulance::Ambulance(int uniqueId, int fund, std::vector<ItemType> resourcesSupp
 
 void Ambulance::sendPatient(){
     // TODO a checker
+
     if(getFund() > 0){
         int qty = 1;
         int toPay = getCostPerUnit(ItemType::PatientSick)*qty;

@@ -1,171 +1,156 @@
 #include "clinic.h"
 #include "costs.h"
-#include <pcosynchro/pcothread.h>
 #include <iostream>
+#include <pcosynchro/pcothread.h>
 
 IWindowInterface *Clinic::interface = nullptr;
 
 Clinic::Clinic(int uniqueId, int fund, std::vector<ItemType> resourcesNeeded)
-    : Seller(fund, uniqueId), nbTreated(0), resourcesNeeded(resourcesNeeded)
-{
-    interface->updateFund(uniqueId, fund);
-    interface->consoleAppendText(uniqueId, "Factory created");
+    : Seller(fund, uniqueId), nbTreated(0), resourcesNeeded(resourcesNeeded) {
+  interface->updateFund(uniqueId, fund);
+  interface->consoleAppendText(uniqueId, "Factory created");
 
-    for (const auto &item : resourcesNeeded)
-    {
-        stocks[item] = 0;
-    }
+  for (const auto &item : resourcesNeeded) {
+    stocks[item] = 0;
+  }
 }
 
-bool Clinic::verifyResources()
-{
-    for (auto item : resourcesNeeded)
-    {
-        if (stocks[item] == 0)
-        {
-            return false;
-        }
+bool Clinic::verifyResources() {
+  for (auto item : resourcesNeeded) {
+    if (stocks[item] == 0) {
+      return false;
     }
-    return true;
+  }
+  return true;
 }
 
-int Clinic::request(ItemType what, int qty)
-{
-    // TODO à checker
-    // Vérifie que le type de patient demandé est soigné
-    if (what == ItemType::PatientHealed){
-        return qty;
-    }
-    return 0;
+int Clinic::request(ItemType what, int qty) {
+  // TODO à checker
+  // Vérifie que le type de patient demandé est soigné
+  if (what == ItemType::PatientHealed) {
+    return qty;
+  }
+  return 0;
 }
 
-void Clinic::treatPatient()
-{
-    // TODO a checker
+void Clinic::treatPatient() {
+  // TODO a checker
+  int qty = 1;
+  int Salary = getEmployeeSalary(EmployeeType::Doctor);
 
-    if (verifyResources())
-    {
+  if (money - Salary >= 0) {
+    mutex.lock();
+    for (auto &resource : resourcesNeeded) {
+      stocks[resource] -= qty;
+    }
+    mutex.unlock();
+
+    // Temps simulant un traitement
+    interface->simulateWork();
+    mutex.lock();
+    stocks[ItemType::PatientSick]--;
+    stocks[ItemType::PatientHealed]++;
+    nbTreated++;
+    money -= Salary;
+    mutex.unlock();
+  }
+  interface->consoleAppendText(uniqueId, "Clinic have healed a patient");
+  interface->updateStock(uniqueId, &stocks);
+}
+
+void Clinic::orderResources() {
+  // TODO a checker
+  for (const auto &item : resourcesNeeded) {
+
+    // Si la ressource manquant
+    if (stocks[item] == 0) {
+      Seller *supplier = chooseRandomSeller(suppliers);
+      int cost = supplier->request(item, 1);
+
+      if (cost > 0) {
         mutex.lock();
-        stocks[ItemType::PatientSick]--;
-        stocks[ItemType::PatientHealed]++;
-        nbTreated++;
+        stocks[item]++;
+        money -= cost;
         mutex.unlock();
-
-        // Temps simulant un traitement
-        interface->simulateWork();
-
-        // TODO
-        interface->consoleAppendText(uniqueId, "Clinic have healed a patient");
-        
-        interface->updateStock(uniqueId, &stocks);
-    }
-}
-
-void Clinic::orderResources()
-{
-    // TODO a checker
-    for (const auto& item : resourcesNeeded) {
-        
-        // Si la ressource manquant
-        if (stocks[item] == 0) {  
-            Seller* supplier = chooseRandomSeller(suppliers);
-            int cost = supplier->request(item, 1);  
-            
-            if (cost > 0) {
-                mutex.lock();
-                stocks[item]++;  
-                money -= cost;  
-                mutex.unlock();
-                interface->updateFund(uniqueId, money);
-                interface->consoleAppendText(uniqueId, "Ordered resources from supplier");
-            } else {
-                interface->consoleAppendText(uniqueId, "Failed to order resources");
-            }
-        }
-    }
-}
-
-void Clinic::run()
-{
-    if (hospitals.empty() || suppliers.empty())
-    {
-        std::cerr << "You have to give to hospitals and suppliers to run a clinic" << std::endl;
-        return;
-    }
-    interface->consoleAppendText(uniqueId, "[START] Factory routine");
-
-    while (PcoThread::thisThread()->stopRequested())
-    {
-
-        if (verifyResources())
-        {
-            treatPatient();
-        }
-        else
-        {
-            orderResources();
-        }
-
-        interface->simulateWork();
-
         interface->updateFund(uniqueId, money);
-        interface->updateStock(uniqueId, &stocks);
+        interface->consoleAppendText(uniqueId,
+                                     "Ordered resources from supplier");
+      } else {
+        interface->consoleAppendText(uniqueId, "Failed to order resources");
+      }
     }
-    interface->consoleAppendText(uniqueId, "[STOP] Factory routine");
+  }
 }
 
-void Clinic::setHospitalsAndSuppliers(std::vector<Seller *> hospitals, std::vector<Seller *> suppliers)
-{
-    this->hospitals = hospitals;
-    this->suppliers = suppliers;
+void Clinic::run() {
+  if (hospitals.empty() || suppliers.empty()) {
+    std::cerr << "You have to give to hospitals and suppliers to run a clinic"
+              << std::endl;
+    return;
+  }
+  interface->consoleAppendText(uniqueId, "[START] Factory routine");
 
-    for (Seller *hospital : hospitals)
-    {
-        interface->setLink(uniqueId, hospital->getUniqueId());
+  while (PcoThread::thisThread()->stopRequested()) {
+
+    if (verifyResources()) {
+      treatPatient();
+    } else {
+      orderResources();
     }
-    for (Seller *supplier : suppliers)
-    {
-        interface->setLink(uniqueId, supplier->getUniqueId());
-    }
+
+    interface->simulateWork();
+
+    interface->updateFund(uniqueId, money);
+    interface->updateStock(uniqueId, &stocks);
+  }
+  interface->consoleAppendText(uniqueId, "[STOP] Factory routine");
 }
 
-int Clinic::getTreatmentCost()
-{
-    return 0;
+void Clinic::setHospitalsAndSuppliers(std::vector<Seller *> hospitals,
+                                      std::vector<Seller *> suppliers) {
+  this->hospitals = hospitals;
+  this->suppliers = suppliers;
+
+  for (Seller *hospital : hospitals) {
+    interface->setLink(uniqueId, hospital->getUniqueId());
+  }
+  for (Seller *supplier : suppliers) {
+    interface->setLink(uniqueId, supplier->getUniqueId());
+  }
 }
 
-int Clinic::getWaitingPatients()
-{
-    return stocks[ItemType::PatientSick];
+int Clinic::getTreatmentCost() { return 0; }
+
+int Clinic::getWaitingPatients() { return stocks[ItemType::PatientSick]; }
+
+int Clinic::getNumberPatients() {
+  return stocks[ItemType::PatientSick] + stocks[ItemType::PatientHealed];
 }
 
-int Clinic::getNumberPatients()
-{
-    return stocks[ItemType::PatientSick] + stocks[ItemType::PatientHealed];
+int Clinic::send(ItemType it, int qty, int bill) { return 0; }
+
+int Clinic::getAmountPaidToWorkers() {
+  return nbTreated *
+         getEmployeeSalary(getEmployeeThatProduces(ItemType::PatientHealed));
 }
 
-int Clinic::send(ItemType it, int qty, int bill)
-{
-    return 0;
+void Clinic::setInterface(IWindowInterface *windowInterface) {
+  interface = windowInterface;
 }
 
-int Clinic::getAmountPaidToWorkers()
-{
-    return nbTreated * getEmployeeSalary(getEmployeeThatProduces(ItemType::PatientHealed));
-}
+std::map<ItemType, int> Clinic::getItemsForSale() { return stocks; }
 
-void Clinic::setInterface(IWindowInterface *windowInterface)
-{
-    interface = windowInterface;
-}
+Pulmonology::Pulmonology(int uniqueId, int fund)
+    : Clinic::Clinic(
+          uniqueId, fund,
+          {ItemType::PatientSick, ItemType::Pill, ItemType::Thermometer}) {}
 
-std::map<ItemType, int> Clinic::getItemsForSale()
-{
-    return stocks;
-}
+Cardiology::Cardiology(int uniqueId, int fund)
+    : Clinic::Clinic(
+          uniqueId, fund,
+          {ItemType::PatientSick, ItemType::Syringe, ItemType::Stethoscope}) {}
 
-Pulmonology::Pulmonology(int uniqueId, int fund) : Clinic::Clinic(uniqueId, fund, {ItemType::PatientSick, ItemType::Pill, ItemType::Thermometer}) {}
-
-Cardiology::Cardiology(int uniqueId, int fund) : Clinic::Clinic(uniqueId, fund, {ItemType::PatientSick, ItemType::Syringe, ItemType::Stethoscope}) {}
-
-Neurology::Neurology(int uniqueId, int fund) : Clinic::Clinic(uniqueId, fund, {ItemType::PatientSick, ItemType::Pill, ItemType::Scalpel}) {}
+Neurology::Neurology(int uniqueId, int fund)
+    : Clinic::Clinic(
+          uniqueId, fund,
+          {ItemType::PatientSick, ItemType::Pill, ItemType::Scalpel}) {}

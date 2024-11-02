@@ -66,6 +66,8 @@ void Hospital::transferPatientsFromClinic() {
 int Hospital::send(ItemType it, int qty, int bill) {
   // TODO
   // Si le patient est malade, vérification lit disponible et fonds suffisants
+  mutex.lock();
+  
   if (it == ItemType::PatientSick) {
     if (currentBeds + qty <= maxBeds && money >= bill) {
       money -= bill;
