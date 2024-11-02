@@ -2,14 +2,14 @@
 #include "costs.h"
 #include <pcosynchro/pcothread.h>
 
-IWindowInterface* Ambulance::interface = nullptr;
+IWindowInterface *Ambulance::interface = nullptr;
 
-Ambulance::Ambulance(int uniqueId, int fund, std::vector<ItemType> resourcesSupplied, std::map<ItemType, int> initialStocks)
-    : Seller(fund, uniqueId), resourcesSupplied(resourcesSupplied), nbTransfer(0) 
-{
+Ambulance::Ambulance(int uniqueId, int fund, std::vector<ItemType> resourcesSupplied,
+                     std::map<ItemType, int> initialStocks)
+    : Seller(fund, uniqueId), resourcesSupplied(resourcesSupplied), nbTransfer(0) {
     interface->consoleAppendText(uniqueId, QString("Ambulance Created"));
 
-    for (const auto& item : resourcesSupplied) {
+    for (const auto &item: resourcesSupplied) {
         if (initialStocks.find(item) != initialStocks.end()) {
             stocks[item] = initialStocks[item];
         } else {
@@ -20,32 +20,40 @@ Ambulance::Ambulance(int uniqueId, int fund, std::vector<ItemType> resourcesSupp
     interface->updateFund(uniqueId, fund);
 }
 
-void Ambulance::sendPatient(){
+void Ambulance::sendPatient() {
     // TODO a checker
+    mutex.lock();
 
-    if(getFund() > 0){
+    if (getFund() > 0 && stocks[ItemType::PatientSick] > 0) {
         int qty = 1;
-        int toPay = getCostPerUnit(ItemType::PatientSick)*qty;
-        int bill = chooseRandomSeller(hospitals)->send(ItemType::PatientSick,qty,toPay);
+        int toPay = getCostPerUnit(ItemType::PatientSick) * qty;
 
-        if(bill > 0 && getFund() > bill){
-            mutex.lock();
-            money += bill;
+        Seller *hospital = chooseRandomSeller(hospitals);
+        int bill = hospital->send(ItemType::PatientSick, qty, toPay);
+
+        if (bill > 0) {
+            money += toPay;
             stocks[ItemType::PatientSick] -= qty;
             nbTransfer++;
-            money -= getEmployeeSalary(EmployeeType::Supplier);
-            mutex.unlock();
+
+            interface->updateFund(uniqueId, money);
+            interface->consoleAppendText(uniqueId, "Successfully transferred a patient to the hospital.");
+        } else {
+            interface->consoleAppendText(uniqueId, "Failed to transfer a patient: no available beds or insufficient funds.");
         }
+    } else {
+        interface->consoleAppendText(uniqueId, "Insufficient funds or no patients to transfer.");
+
     }
+    mutex.unlock();
 }
 
 void Ambulance::run() {
     interface->consoleAppendText(uniqueId, "[START] Ambulance routine");
 
     while (!PcoThread::thisThread()->stopRequested()) {
-
         sendPatient();
-        
+
         interface->simulateWork();
 
         interface->updateFund(uniqueId, money);
@@ -61,7 +69,7 @@ std::map<ItemType, int> Ambulance::getItemsForSale() {
 
 int Ambulance::getMaterialCost() {
     int totalCost = 0;
-    for (const auto& item : resourcesSupplied) {
+    for (const auto &item: resourcesSupplied) {
         totalCost += getCostPerUnit(item);
     }
     return totalCost;
@@ -71,7 +79,7 @@ int Ambulance::getAmountPaidToWorkers() {
     return nbTransfer * getEmployeeSalary(EmployeeType::Supplier);
 }
 
-int Ambulance::getNumberPatients(){
+int Ambulance::getNumberPatients() {
     return stocks[ItemType::PatientSick];
 }
 
@@ -80,10 +88,10 @@ void Ambulance::setInterface(IWindowInterface *windowInterface) {
 }
 
 
-void Ambulance::setHospitals(std::vector<Seller*> hospitals){
+void Ambulance::setHospitals(std::vector<Seller *> hospitals) {
     this->hospitals = hospitals;
 
-    for (Seller* hospital : hospitals) {
+    for (Seller *hospital: hospitals) {
         interface->setLink(uniqueId, hospital->getUniqueId());
     }
 }
@@ -93,11 +101,10 @@ int Ambulance::send(ItemType it, int qty, int bill) {
 }
 
 
-int Ambulance::request(ItemType what, int qty){
+int Ambulance::request(ItemType what, int qty) {
     return 0;
 }
 
-std::vector<ItemType> Ambulance::getResourcesSupplied() const
-{
+std::vector<ItemType> Ambulance::getResourcesSupplied() const {
     return resourcesSupplied;
 }

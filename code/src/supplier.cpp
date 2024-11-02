@@ -2,13 +2,12 @@
 #include "costs.h"
 #include <pcosynchro/pcothread.h>
 
-IWindowInterface* Supplier::interface = nullptr;
+IWindowInterface *Supplier::interface = nullptr;
 
 Supplier::Supplier(int uniqueId, int fund, std::vector<ItemType> resourcesSupplied)
-    : Seller(fund, uniqueId), resourcesSupplied(resourcesSupplied), nbSupplied(0) 
-{
-    for (const auto& item : resourcesSupplied) {    
-        stocks[item] = 0;    
+    : Seller(fund, uniqueId), resourcesSupplied(resourcesSupplied), nbSupplied(0) {
+    for (const auto &item: resourcesSupplied) {
+        stocks[item] = 0;
     }
 
     interface->consoleAppendText(uniqueId, QString("Supplier Created"));
@@ -19,41 +18,55 @@ Supplier::Supplier(int uniqueId, int fund, std::vector<ItemType> resourcesSuppli
 int Supplier::request(ItemType it, int qty) {
     // TODO
     if (std::find(resourcesSupplied.begin(), resourcesSupplied.end(), it) == resourcesSupplied.end()) {
-        return 0; 
+        return 0;
     }
 
-    int price = qty * getCostPerUnit(it); 
+    int price = qty * getCostPerUnit(it);
+    QString message;
 
     mutex.lock();
-    if (price <= money) { 
-        stocks[it] += qty; 
-        money -= price;    
-        mutex.unlock();
-        interface->consoleAppendText(uniqueId, QString("Bought %1 of %2 for %3.")
-                                    .arg(qty).arg(getItemName(it)).arg(price));
-        return price;    
+    bool purchaseSuccessful = false;
+
+    if (price <= money) {
+        stocks[it] += qty;
+        money -= price;
+        message = QString("Bought %1 of %2 for %3.").arg(qty).arg(getItemName(it)).arg(price);
+        purchaseSuccessful = true;
+    } else {
+        message = QString("Not enough funds to buy %1 of %2.").arg(qty).arg(getItemName(it));
     }
     mutex.unlock();
-    interface->consoleAppendText(uniqueId, QString("Not enough funds to buy %1 of %2.")
-                                .arg(qty).arg(getItemName(it)));
-    mutex.unlock();
+    interface->consoleAppendText(uniqueId, message);
+
+    return purchaseSuccessful ? price : 0;
 }
 
 void Supplier::run() {
     interface->consoleAppendText(uniqueId, "[START] Supplier routine");
+
     while (!PcoThread::thisThread()->stopRequested()) {
         ItemType resourceSupplied = getRandomItemFromStock();
         int supplierCost = getEmployeeSalary(getEmployeeThatProduces(resourceSupplied));
-        // TODO 
+        // TODO
+
+        mutex.lock();
+        if (money >= supplierCost) {
+            money -= supplierCost;
+            stocks[resourceSupplied]++;
+            nbSupplied++;
+
+            interface->updateFund(uniqueId, money);
+            interface->updateStock(uniqueId, &stocks);
+            interface->consoleAppendText(uniqueId, QString("Imported %1 of %2.")
+                                         .arg(1).arg(getItemName(resourceSupplied)));
+        } else {
+            interface->consoleAppendText(uniqueId, "Insufficient funds to pay the employee.");
+        }
+        mutex.unlock();
 
         /* Temps aléatoire borné qui simule l'attente du travail fini*/
         interface->simulateWork();
         //TODO
-
-        nbSupplied++;
-
-        interface->updateFund(uniqueId, money);
-        interface->updateStock(uniqueId, &stocks);
     }
     interface->consoleAppendText(uniqueId, "[STOP] Supplier routine");
 }
@@ -65,7 +78,7 @@ std::map<ItemType, int> Supplier::getItemsForSale() {
 
 int Supplier::getMaterialCost() {
     int totalCost = 0;
-    for (const auto& item : resourcesSupplied) {
+    for (const auto &item: resourcesSupplied) {
         totalCost += getCostPerUnit(item);
     }
     return totalCost;
@@ -79,11 +92,10 @@ void Supplier::setInterface(IWindowInterface *windowInterface) {
     interface = windowInterface;
 }
 
-std::vector<ItemType> Supplier::getResourcesSupplied() const
-{
+std::vector<ItemType> Supplier::getResourcesSupplied() const {
     return resourcesSupplied;
 }
 
-int Supplier::send(ItemType it, int qty, int bill){
+int Supplier::send(ItemType it, int qty, int bill) {
     return 0;
 }
