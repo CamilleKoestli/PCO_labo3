@@ -78,12 +78,12 @@ Afin d'assurer un arrêt correct de la simulation, nous avons déclaré une vari
 
 Pour en tenir compte dans le reste du projet, nous avons ajouté une boucle `while` qui vérifie si `stopRequest` est `true` dans toutes les fonctions `run` de chaque sous-classe de `Seller`.
 
-
-
 ## Tests effectués
 
+Pour identifier les zones critiques, nous avons testé notre programmes dans différentes situations :
 
-Description de chaque test, et information sur le fait qu'il ait passé ou non
+- Tests de concurrence :
+- Tests unitaires :
 
 ## Conclusion
 
