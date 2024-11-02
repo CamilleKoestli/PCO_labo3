@@ -35,26 +35,26 @@ int Clinic::request(ItemType what, int qty) {
 
 void Clinic::treatPatient() {
   // TODO a checker
-  int qty = 1;
-  int Salary = getEmployeeSalary(EmployeeType::Doctor);
+  int salary = getEmployeeSalary(EmployeeType::Doctor);
 
-  if (money - Salary >= 0) {
+  if (money - salary >= 0) {
     mutex.lock();
     for (auto &resource : resourcesNeeded) {
-      stocks[resource] -= qty;
+      stocks[resource];
     }
     mutex.unlock();
 
     // Temps simulant un traitement
     interface->simulateWork();
     mutex.lock();
-    stocks[ItemType::PatientSick]--;
     stocks[ItemType::PatientHealed]++;
     nbTreated++;
-    money -= Salary;
+    money -= salary;
     mutex.unlock();
+    
+    interface->consoleAppendText(uniqueId, "Clinic have healed a patient");
   }
-  interface->consoleAppendText(uniqueId, "Clinic have healed a patient");
+  
   interface->updateStock(uniqueId, &stocks);
 }
 
