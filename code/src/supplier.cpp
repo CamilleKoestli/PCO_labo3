@@ -18,7 +18,25 @@ Supplier::Supplier(int uniqueId, int fund, std::vector<ItemType> resourcesSuppli
 
 int Supplier::request(ItemType it, int qty) {
     // TODO
-    return 0;
+    if (std::find(resourcesSupplied.begin(), resourcesSupplied.end(), it) == resourcesSupplied.end()) {
+        return 0; 
+    }
+
+    int price = qty * getCostPerUnit(it); 
+
+    mutex.lock();
+    if (price <= money) { 
+        stocks[it] += qty; 
+        money -= price;    
+        mutex.unlock();
+        interface->consoleAppendText(uniqueId, QString("Bought %1 of %2 for %3.")
+                                    .arg(qty).arg(getItemName(it)).arg(price));
+        return price;    
+    }
+    mutex.unlock();
+    interface->consoleAppendText(uniqueId, QString("Not enough funds to buy %1 of %2.")
+                                .arg(qty).arg(getItemName(it)));
+    mutex.unlock();
 }
 
 void Supplier::run() {
