@@ -41,7 +41,7 @@ int Supplier::request(ItemType it, int qty) {
 
 void Supplier::run() {
     interface->consoleAppendText(uniqueId, "[START] Supplier routine");
-    while (true /*TODO*/) {
+    while (!PcoThread::thisThread()->stopRequested()/*true TODO*/) {
         ItemType resourceSupplied = getRandomItemFromStock();
         int supplierCost = getEmployeeSalary(getEmployeeThatProduces(resourceSupplied));
         // TODO 

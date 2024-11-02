@@ -97,7 +97,7 @@ void Hospital::run() {
 
   interface->consoleAppendText(uniqueId, "[START] Hospital routine");
 
-  while (true /*TODO*/) {
+  while (!PcoThread::thisThread()->stopRequested()/*true TODO*/) {
     transferPatientsFromClinic();
 
     freeHealedPatient();

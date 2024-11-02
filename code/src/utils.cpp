@@ -1,11 +1,13 @@
 #include "utils.h"
+#include <iostream>
 
 
 void Utils::endService() {
     // TODO
-     for(auto& thread : threads) {
+     for (const auto &thread: threads) {
         thread->requestStop();
     }
+    std::cout << "The hospital is closed !" << std::endl;
 }
 
 void Utils::externalEndService() {
