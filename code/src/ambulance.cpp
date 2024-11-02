@@ -22,53 +22,27 @@ Ambulance::Ambulance(int uniqueId, int fund, std::vector<ItemType> resourcesSupp
 
 void Ambulance::sendPatient(){
     // TODO a checker
+    if(getFund() > 0){
+        int qty = 1;
+        int toPay = getCostPerUnit(ItemType::PatientSick)*qty;
+        int bill = chooseRandomSeller(hospitals)->send(ItemType::PatientSick,qty,toPay);
 
-    if (hospitals.empty()) {
-        interface->consoleAppendText(uniqueId, "No hospitals available");
-        return;
-    }
-
-    // Choose a random hospital
-    Seller* hospital = chooseRandomSeller(hospitals);
-
-    // Vérification si l'hôpital prend le patient
-    if(stocks[ItemType::PatientSick] == 0){
-        interface->consoleAppendText(uniqueId, "No patients to send");
-        return;
-    } 
-
-    int patientsToSend;
-    
-    mutex.lock();
-    if (patientsToSend > 0) {
-        int bill = hospital->request(ItemType::PatientSick, patientsToSend);
-        
-        if (bill > 0) {
-            stocks[ItemType::PatientSick] -= patientsToSend;
+        if(bill > 0 && getFund() > bill){
+            mutex.lock();
             money += bill;
+            stocks[ItemType::PatientSick] -= qty;
             nbTransfer++;
-            interface->updateFund(uniqueId, money);
-            interface->updateStock(uniqueId, &stocks);
-            interface->consoleAppendText(uniqueId, "Patient sent to hospital.");
-        } else {
-            interface->consoleAppendText(uniqueId, "No hospital could accept the patient.");
+            money -= getEmployeeSalary(EmployeeType::Supplier);
+            mutex.unlock();
         }
-    } else {
-        interface->consoleAppendText(uniqueId, "No patients to send");
     }
-    mutex.unlock();
 }
 
 void Ambulance::run() {
     interface->consoleAppendText(uniqueId, "[START] Ambulance routine");
 
-    while (!PcoThread::thisThread()->stopRequested()/*true TODO*/) {
+    while (!PcoThread::thisThread()->stopRequested()) {
 
-        // S'il y a des patients malades
-        if (getNumberPatients() > 0) {  
-            sendPatient();
-        }
-    
         sendPatient();
         
         interface->simulateWork();

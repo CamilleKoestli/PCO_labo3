@@ -94,7 +94,7 @@ void Clinic::run()
     }
     interface->consoleAppendText(uniqueId, "[START] Factory routine");
 
-    while (PcoThread::thisThread()->stopRequested()/*true TODO*/)
+    while (PcoThread::thisThread()->stopRequested())
     {
 
         if (verifyResources())
