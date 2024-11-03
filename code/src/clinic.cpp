@@ -1,5 +1,6 @@
 #include "clinic.h"
 #include "costs.h"
+#include "seller.h"
 #include <iostream>
 #include <pcosynchro/pcothread.h>
 
@@ -26,14 +27,16 @@ bool Clinic::verifyResources() {
 
 int Clinic::request(ItemType what, int qty) {
     // TODO à checker
-    // Vérifie que le type de patient demandé est soigné
-    if (what == ItemType::PatientHealed) {
+    int bill = getEmployeeSalary(getEmployeeThatProduces(what));
+
+    if (bill > 0) {
         mutex.lock();
 
         if (stocks[what] >= qty) {
             stocks[what] -= qty;
+            money += bill;
             mutex.unlock();
-            return qty;
+            return 1;
         }
         mutex.unlock();
     }

@@ -69,15 +69,15 @@ void Hospital::transferPatientsFromClinic() {
             if (currentBeds < maxBeds) {
                 currentBeds++;
                 nbHospitalised++;
-                money -= nurseSalary; // Paie l'infirmier pour chaque patient
+                money -= nurseSalary; 
                 interface->updateFund(uniqueId, money);
 
                 interface->consoleAppendText(uniqueId, "Transferred a healed patient from the clinic to the hospital.");
                 interface->updateStock(uniqueId, &stocks);
                 mutex.unlock();
-                break; // stop le transfert après avoir add un patient
+                break; 
             } else {
-                mutex.unlock(); // Déverrouille si le transfert ne peut pas se faire
+                mutex.unlock(); 
                 if (currentBeds >= maxBeds) {
                     interface->consoleAppendText(uniqueId, "No available beds for transferring a patient.");
                 } else if (money < nurseSalary) {
