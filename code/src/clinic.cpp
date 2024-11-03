@@ -85,7 +85,7 @@ void Clinic::orderResources() {
     int qty = 1;
 
     if (randHospital->request(ItemType::PatientSick, qty) and money - getEmployeeSalary(getEmployeeThatProduces(ItemType::PatientSick)) >= 0) {
-        this->stocks[ItemType::PatientSick] += qty;
+        stocks[ItemType::PatientSick] += qty;
         money -= getEmployeeSalary(getEmployeeThatProduces(ItemType::PatientSick));
     }
 
@@ -93,7 +93,7 @@ void Clinic::orderResources() {
     
     for (auto item : supplies) {
         if (randSupplier->request(item, qty) and money-getCostPerUnit(item)*qty >= 0) {
-            this->stocks[item] += qty;
+            stocks[item] += qty;
             money -= getCostPerUnit(item) * qty;
         }
         interface->updateStock(uniqueId, &stocks);
