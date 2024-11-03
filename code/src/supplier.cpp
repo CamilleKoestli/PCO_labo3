@@ -25,20 +25,18 @@ int Supplier::request(ItemType it, int qty) {
     QString message;
 
     mutex.lock();
-    bool purchaseSuccessful = false;
 
     if (price <= money) {
-        stocks[it] += qty;
-        money -= price;
+        stocks[it] -= qty;
+        money += price;
         message = QString("Bought %1 of %2 for %3.").arg(qty).arg(getItemName(it)).arg(price);
-        purchaseSuccessful = true;
     } else {
         message = QString("Not enough funds to buy %1 of %2.").arg(qty).arg(getItemName(it));
     }
     mutex.unlock();
     interface->consoleAppendText(uniqueId, message);
 
-    return purchaseSuccessful ? price : 0;
+    return 0;
 }
 
 void Supplier::run() {
@@ -49,23 +47,27 @@ void Supplier::run() {
         int supplierCost = getEmployeeSalary(getEmployeeThatProduces(resourceSupplied));
         // TODO
 
-        mutex.lock();
+        
         if (money >= supplierCost) {
             money -= supplierCost;
+            mutex.lock();
             stocks[resourceSupplied]++;
             nbSupplied++;
+            mutex.unlock();
 
-            interface->updateFund(uniqueId, money);
-            interface->updateStock(uniqueId, &stocks);
+            interface->simulateWork();
+
+            
             interface->consoleAppendText(uniqueId, QString("Imported %1 of %2.")
                                          .arg(1).arg(getItemName(resourceSupplied)));
         } else {
             interface->consoleAppendText(uniqueId, "Insufficient funds to pay the employee.");
         }
-        mutex.unlock();
+        
 
         /* Temps aléatoire borné qui simule l'attente du travail fini*/
-        interface->simulateWork();
+        interface->updateFund(uniqueId, money);
+        interface->updateStock(uniqueId, &stocks);
         //TODO
     }
     interface->consoleAppendText(uniqueId, "[STOP] Supplier routine");
