@@ -24,15 +24,14 @@ Hospital::Hospital(int uniqueId, int fund, int maxBeds)
 
 int Hospital::request(ItemType what, int qty) {
     // TODO
-    if (qty <= 0)
-        return 0;
-
     mutex.lock();
     bool requestSuccessful = false;
 
-    if (what == ItemType::PatientSick && currentBeds >= qty) {
-        currentBeds -= qty;
-        money -= getEmployeeSalary(EmployeeType::Nurse); // Paie l'infirmier pour chaque patient
+    if (stocks[what] - qty >= 0) {
+        int bill = qty * getCostPerUnit(what);
+        stocks[what] -= qty;
+        money -= getEmployeeSalary(EmployeeType::Nurse);
+        money += bill;
         interface->updateFund(uniqueId, money);
         requestSuccessful = true;
     }
@@ -44,17 +43,18 @@ int Hospital::request(ItemType what, int qty) {
 
 void Hospital::freeHealedPatient() {
     // TODO
-    mutex.lock();
     if (currentBeds < 0) {
+        mutex.lock();
         currentBeds--;
         nbFree++;
         money -= getEmployeeSalary(EmployeeType::Nurse); // Paie l'infirmier pour chaque patient
+        mutex.unlock();
         interface->updateFund(uniqueId, money);
 
         interface->consoleAppendText(uniqueId, "A healed patient has been discharged from the hospital.");
         interface->updateStock(uniqueId, &stocks);
     }
-    mutex.unlock();
+    
 }
 
 void Hospital::transferPatientsFromClinic() {
@@ -91,34 +91,19 @@ void Hospital::transferPatientsFromClinic() {
 
 int Hospital::send(ItemType it, int qty, int bill) {
     // TODO
-    // Si le patient est malade, vérification lit disponible et fonds suffisants
-    mutex.lock();
-    bool transactionSuccessful = false; // permet de factoriser le code et de ne faire qu'un seul unlock
-
-    if (it == ItemType::PatientSick) {
-        int totalCost = bill + getEmployeeSalary(EmployeeType::Nurse) * qty;
-        if (qty > 0 && currentBeds + qty <= maxBeds && money >= totalCost) {
-            money -= totalCost;
-            currentBeds += qty;
-
-            transactionSuccessful = true;
-        }
-    }
-    // Si le patient est guéri, réduire les lits occupés
-    else if (it == ItemType::PatientHealed) {
-        if (qty > 0 && currentBeds >= qty) {
-            currentBeds -= qty;
-            transactionSuccessful = true;
-        }
+    // Vérifie si l'hôpital a les ressources nécessaires pour traiter un patient
+    if (maxBeds - currentBeds - qty >= 0 && money - bill >= 0) {
+        mutex.lock();
+        currentBeds += qty;
+        stocks[it] += qty;
+        money -= bill;
+        money -= getEmployeeSalary(EmployeeType::Nurse);
+        nbHospitalised++;
+        mutex.unlock();
+        return bill;
     }
 
-    mutex.unlock();
-
-    if (transactionSuccessful) {
-        interface->updateFund(uniqueId, money);
-    }
-    // retourne le status de la transaction
-    return transactionSuccessful ? bill : 0;
+    return 0;
 }
 
 void Hospital::run() {

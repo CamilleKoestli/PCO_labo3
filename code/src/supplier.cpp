@@ -35,7 +35,6 @@ void Supplier::run() {
         int supplierCost = getEmployeeSalary(getEmployeeThatProduces(resourceSupplied));
         // TODO
 
-        
         if (money >= supplierCost) {
             money -= supplierCost;
             mutex.lock();
