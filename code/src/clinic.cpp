@@ -8,7 +8,7 @@ IWindowInterface *Clinic::interface = nullptr;
 Clinic::Clinic(int uniqueId, int fund, std::vector<ItemType> resourcesNeeded)
     : Seller(fund, uniqueId), nbTreated(0), resourcesNeeded(resourcesNeeded) {
     interface->updateFund(uniqueId, fund);
-    interface->consoleAppendText(uniqueId, "Factory created");
+    interface->consoleAppendText(uniqueId, "Clinic created");
 
     for (const auto &item: resourcesNeeded) {
         stocks[item] = 0;
@@ -80,24 +80,23 @@ void Clinic::treatPatient() {
 
 void Clinic::orderResources() {
     // TODO a checker
-    for (const auto &item: resourcesNeeded) {
-        // Si la ressource manquant
-        if (stocks[item] < 1 && money >= getCostPerUnit(item)) {
-            Seller *supplier = chooseRandomSeller(suppliers);
-            int cost = supplier->request(item, 1);
+    auto randHospital = this->chooseRandomSeller(hospitals);
+    auto randSupplier = this->chooseRandomSeller(suppliers);
+    int qty = 1;
 
-            if (cost > 0) {
-                mutex.lock();
-                stocks[item]++;
-                money -= cost;
-                mutex.unlock();
+    if (randHospital->request(ItemType::PatientSick, qty) and money - getEmployeeSalary(getEmployeeThatProduces(ItemType::PatientSick)) >= 0) {
+        this->stocks[ItemType::PatientSick] += qty;
+        money -= getEmployeeSalary(getEmployeeThatProduces(ItemType::PatientSick));
+    }
 
-                interface->updateFund(uniqueId, money);
-                interface->consoleAppendText(uniqueId, "Ordered resources from supplier");
-            } else {
-                interface->consoleAppendText(uniqueId, "Failed to order resources");
-            }
+    auto supplies = {ItemType::Pill,ItemType::Scalpel,ItemType::Stethoscope,ItemType::Syringe,ItemType::Thermometer};
+    
+    for (auto item : supplies) {
+        if (randSupplier->request(item, qty) and money-getCostPerUnit(item)*qty >= 0) {
+            this->stocks[item] += qty;
+            money -= getCostPerUnit(item) * qty;
         }
+        interface->updateStock(uniqueId, &stocks);
     }
 }
 
@@ -113,13 +112,13 @@ void Clinic::run() {
     while (!PcoThread::thisThread()->stopRequested()) {
         // Vérifie si la clinique a les ressources nécessaires pour traiter un patient
         if (verifyResources()) {
-            mutex.lock();
+            
             treatPatient();
-            mutex.unlock();
+            
         } else {
-            mutex.lock();
+            
             orderResources();
-            mutex.unlock();
+          
         }
 
         // Simule un délai de travail
