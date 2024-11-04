@@ -29,9 +29,8 @@ int Clinic::request(ItemType what, int qty) {
     // TODO
     int bill = getEmployeeSalary(getEmployeeThatProduces(what));
 
+    mutex.lock();
     if (bill > 0) {
-        mutex.lock();
-
         if (stocks[what] >= qty) {
             stocks[what] -= qty;
             money += bill;
@@ -45,7 +44,8 @@ int Clinic::request(ItemType what, int qty) {
 
 void Clinic::treatPatient() {
     // TODO
-    int salary = getEmployeeSalary(EmployeeType::Doctor);
+    int salary = getEmployeeSalary(getEmployeeThatProduces(ItemType::PatientHealed));
+    int s = getEmployeeSalary(EmployeeType::Doctor);
 
     mutex.lock();
     if (money >= salary) {
@@ -64,13 +64,9 @@ void Clinic::treatPatient() {
             nbTreated++;
             money -= salary;
 
-            mutex.unlock();
-
             interface->simulateWork();
             interface->consoleAppendText(uniqueId, "Clinic has healed a patient.");
         } else {
-            mutex.unlock();
-
             interface->consoleAppendText(uniqueId, "Clinic lacks resources to treat a patient.");
         }
     } else {
@@ -78,6 +74,7 @@ void Clinic::treatPatient() {
     }
     interface->updateStock(uniqueId, &stocks);
     interface->updateFund(uniqueId, money);
+    mutex.unlock();
 }
 
 void Clinic::orderResources() {
