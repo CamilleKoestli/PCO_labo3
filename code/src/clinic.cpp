@@ -45,7 +45,6 @@ int Clinic::request(ItemType what, int qty) {
 void Clinic::treatPatient() {
     // TODO
     int salary = getEmployeeSalary(getEmployeeThatProduces(ItemType::PatientHealed));
-    int s = getEmployeeSalary(EmployeeType::Doctor);
 
     mutex.lock();
     if (money >= salary) {
@@ -79,31 +78,31 @@ void Clinic::treatPatient() {
 
 void Clinic::orderResources() {
     // TODO
-    auto randHospital = this->chooseRandomSeller(hospitals);
-    auto randSupplier = this->chooseRandomSeller(suppliers);
+    auto randHospital = chooseRandomSeller(hospitals);
+    auto randSupplier = chooseRandomSeller(suppliers);
     int qty = 1;
 
-    int patientCost = getEmployeeSalary(getEmployeeThatProduces(ItemType::PatientSick));
+    int nurseSalary = getEmployeeSalary(EmployeeType::Nurse);
 
     mutex.lock();
-    if (randHospital->request(ItemType::PatientSick, qty) && money >= patientCost) {
-        stocks[ItemType::PatientSick] += qty;
-        money -= patientCost;
+    if (money >= nurseSalary) {
+        if (randHospital->request(ItemType::PatientSick, qty)) {
+            stocks[ItemType::PatientSick] += qty;
+            money -= nurseSalary * qty;
+        }
+    }
+
+    for (auto item : resourcesNeeded) {
+        int itemCost = getCostPerUnit(item) * qty;
+        if (money >= itemCost) {
+            if (randSupplier->request(item, qty)) {
+                stocks[item] += qty;
+                money -= getCostPerUnit(item) * qty;
+            }
+        }
     }
     mutex.unlock();
 
-    auto supplies = {ItemType::Pill,ItemType::Scalpel,ItemType::Stethoscope,ItemType::Syringe,ItemType::Thermometer};
-    
-    for (auto item : supplies) {
-        int itemCost = getCostPerUnit(item) * qty;
-
-        mutex.lock();
-        if (randSupplier->request(item, qty) && money >= itemCost) {
-            stocks[item] += qty;
-            money -= getCostPerUnit(item) * qty;
-        }
-        mutex.unlock();
-    }
     interface->updateStock(uniqueId, &stocks);
 }
 

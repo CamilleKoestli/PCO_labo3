@@ -25,19 +25,19 @@ Hospital::Hospital(int uniqueId, int fund, int maxBeds)
 int Hospital::request(ItemType what, int qty) {
     // TODO
     int bill = qty * getCostPerUnit(what);
-    int result = 0;
 
     mutex.lock();
-    if (stocks[what] - qty >= 0) {
+    if (stocks[what] >= qty) {
         stocks[what] -= qty;
         currentBeds -= qty;
         money += bill;
 
         interface->updateFund(uniqueId, money);
-        result = bill;
+        mutex.unlock();
+        return bill;
     }
     mutex.unlock();
-    return result;
+    return 0;
 }
 
 void Hospital::freeHealedPatient() {
@@ -74,7 +74,7 @@ void Hospital::transferPatientsFromClinic() {
     if (bill > 0 && money >= bill && currentBeds + qty <= maxBeds) {
         money -= bill;
         ++currentBeds;
-        ++stocks[ItemType::PatientHealed];
+        stocks[ItemType::PatientHealed] += qty;
 
         // Ajoute un patient avec un temps de 5 jours
         healedPatientsDaysLeft.push_back(5);
