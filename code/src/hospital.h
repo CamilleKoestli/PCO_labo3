@@ -1,6 +1,7 @@
 #ifndef HOSPITAL_H
 #define HOSPITAL_H
 
+#include <deque>
 #include <vector>
 #include <pcosynchro/pcomutex.h>
 
@@ -103,6 +104,9 @@ private:
     int nbHospitalised; //Nombre de transfert réussi vers l'hôpital (nombre de fois ou un(e) infirmier/infirmière est payé)
 
     int nbFree; // Nombre de personnes qui sont sorties soignées de l'hôpital.
+
+    std::deque<int> healedPatientsDaysLeft;  // Chaque élément représente le nombre de jours restants pour un patient guéri
+
 
     static IWindowInterface* interface;  // Pointeur statique vers l'interface utilisateur pour les logs et mises à jour visuelles
 };

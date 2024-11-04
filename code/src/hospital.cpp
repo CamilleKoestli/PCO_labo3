@@ -30,8 +30,10 @@ int Hospital::request(ItemType what, int qty) {
     if (stocks[what] - qty >= 0) {
         int bill = qty * getCostPerUnit(what);
         stocks[what] -= qty;
+
         money -= getEmployeeSalary(EmployeeType::Nurse);
         money += bill;
+
         interface->updateFund(uniqueId, money);
         requestSuccessful = true;
     }
@@ -42,50 +44,48 @@ int Hospital::request(ItemType what, int qty) {
 }
 
 void Hospital::freeHealedPatient() {
-    // TODO
-    if (currentBeds < 0) {
-        mutex.lock();
-        currentBeds--;
-        nbFree++;
-        money -= getEmployeeSalary(EmployeeType::Nurse); // Paie l'infirmier pour chaque patient
-        mutex.unlock();
-        interface->updateFund(uniqueId, money);
+    //TODO
+    mutex.lock();
 
-        interface->consoleAppendText(uniqueId, "A healed patient has been discharged from the hospital.");
-        interface->updateStock(uniqueId, &stocks);
+    for (auto it = healedPatientsDaysLeft.begin(); it != healedPatientsDaysLeft.end(); ) {
+        if (*it > 0) {
+            --(*it);  // Décrémente les jours restants pour ce patient
+
+            if (*it == 0) {
+                // Le patient a terminé sa récupération et sort de l'hôpital
+                --stocks[ItemType::PatientHealed];
+                ++nbFree;       
+                --currentBeds;  
+
+                interface->consoleAppendText(uniqueId, "A healed patient leaves the hospital.");
+
+                it = healedPatientsDaysLeft.erase(it);  // Supprime le patient de la deque
+            } else {
+                ++it; // Passe au patient suivant
+            }
+        }
     }
-    
+
+    mutex.unlock();
 }
 
 void Hospital::transferPatientsFromClinic() {
-    // TODO
-    for (auto &clinic: clinics) {
-        int healedPatients = clinic->request(ItemType::PatientHealed, 1);
+    //TODO
+    int qty = 1;
+    Seller* clinic = chooseRandomSeller(clinics);
+    int bill = clinic->request(ItemType::PatientHealed, qty);
 
-        if (healedPatients > 0) {
-            mutex.lock();
+    if (bill > 0 && money >= bill && currentBeds + qty <= maxBeds) {
+        mutex.lock();
 
-            int nurseSalary = getEmployeeSalary(EmployeeType::Nurse);
-            if (currentBeds < maxBeds) {
-                currentBeds++;
-                nbHospitalised++;
-                money -= nurseSalary; 
-                interface->updateFund(uniqueId, money);
+        money -= bill;
+        ++currentBeds;
+        ++stocks[ItemType::PatientHealed];
 
-                interface->consoleAppendText(uniqueId, "Transferred a healed patient from the clinic to the hospital.");
-                interface->updateStock(uniqueId, &stocks);
-                mutex.unlock();
-                break; 
-            } else {
-                mutex.unlock(); 
-                if (currentBeds >= maxBeds) {
-                    interface->consoleAppendText(uniqueId, "No available beds for transferring a patient.");
-                } else if (money < nurseSalary) {
-                    interface->consoleAppendText(
-                        uniqueId, "Insufficient funds to pay the nurse for transferring a patient.");
-                }
-            }
-        }
+        // Ajoute un patient avec un temps de 5 jours
+        healedPatientsDaysLeft.push_back(5);
+
+        mutex.unlock();
     }
 }
 
@@ -94,10 +94,13 @@ int Hospital::send(ItemType it, int qty, int bill) {
     // Vérifie si l'hôpital a les ressources nécessaires pour traiter un patient
     if (maxBeds - currentBeds - qty >= 0 && money - bill >= 0) {
         mutex.lock();
+
         currentBeds += qty;
         stocks[it] += qty;
+
         money -= bill;
         money -= getEmployeeSalary(EmployeeType::Nurse);
+
         nbHospitalised++;
         mutex.unlock();
         return bill;
