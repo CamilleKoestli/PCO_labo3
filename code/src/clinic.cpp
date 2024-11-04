@@ -26,7 +26,7 @@ bool Clinic::verifyResources() {
 }
 
 int Clinic::request(ItemType what, int qty) {
-    // TODO à checker
+    // TODO
     int bill = getEmployeeSalary(getEmployeeThatProduces(what));
 
     if (bill > 0) {
@@ -44,12 +44,11 @@ int Clinic::request(ItemType what, int qty) {
 }
 
 void Clinic::treatPatient() {
-    // TODO a checker
+    // TODO
     int salary = getEmployeeSalary(EmployeeType::Doctor);
 
+    mutex.lock();
     if (money >= salary) {
-        mutex.lock();
-
         bool hasAllRessources = true;
         for (auto &resource: resourcesNeeded) {
             if (stocks[resource] <= 0) {
@@ -82,25 +81,33 @@ void Clinic::treatPatient() {
 }
 
 void Clinic::orderResources() {
-    // TODO a checker
+    // TODO
     auto randHospital = this->chooseRandomSeller(hospitals);
     auto randSupplier = this->chooseRandomSeller(suppliers);
     int qty = 1;
 
-    if (randHospital->request(ItemType::PatientSick, qty) and money - getEmployeeSalary(getEmployeeThatProduces(ItemType::PatientSick)) >= 0) {
+    int patientCost = getEmployeeSalary(getEmployeeThatProduces(ItemType::PatientSick));
+
+    mutex.lock();
+    if (randHospital->request(ItemType::PatientSick, qty) && money >= patientCost) {
         stocks[ItemType::PatientSick] += qty;
-        money -= getEmployeeSalary(getEmployeeThatProduces(ItemType::PatientSick));
+        money -= patientCost;
     }
+    mutex.unlock();
 
     auto supplies = {ItemType::Pill,ItemType::Scalpel,ItemType::Stethoscope,ItemType::Syringe,ItemType::Thermometer};
     
     for (auto item : supplies) {
-        if (randSupplier->request(item, qty) and money-getCostPerUnit(item)*qty >= 0) {
+        int itemCost = getCostPerUnit(item) * qty;
+
+        mutex.lock();
+        if (randSupplier->request(item, qty) && money >= itemCost) {
             stocks[item] += qty;
             money -= getCostPerUnit(item) * qty;
         }
-        interface->updateStock(uniqueId, &stocks);
+        mutex.unlock();
     }
+    interface->updateStock(uniqueId, &stocks);
 }
 
 void Clinic::run() {

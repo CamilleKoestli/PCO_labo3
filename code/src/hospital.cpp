@@ -24,30 +24,25 @@ Hospital::Hospital(int uniqueId, int fund, int maxBeds)
 
 int Hospital::request(ItemType what, int qty) {
     // TODO
-    mutex.lock();
-    
-    if (stocks[what] - qty >= 0) {
-        int bill = qty * getCostPerUnit(what);
-        stocks[what] -= qty;
+    int bill = qty * getCostPerUnit(what);
+    int result = 0;
 
+    mutex.lock();
+    if (stocks[what] - qty >= 0) {
+        stocks[what] -= qty;
         currentBeds -= qty;
         money += bill;
 
         interface->updateFund(uniqueId, money);
-        mutex.unlock();
-        return bill;
-        
+        result = bill;
     }
-
     mutex.unlock();
-
-    return 0;
+    return result;
 }
 
 void Hospital::freeHealedPatient() {
     //TODO
     mutex.lock();
-
     for (auto it = healedPatientsDaysLeft.begin(); it != healedPatientsDaysLeft.end(); ) {
         if (*it > 0) {
             --(*it);  // Décrémente les jours restants pour ce patient
@@ -66,7 +61,6 @@ void Hospital::freeHealedPatient() {
             }
         }
     }
-
     mutex.unlock();
 }
 
@@ -76,9 +70,8 @@ void Hospital::transferPatientsFromClinic() {
     Seller* clinic = chooseRandomSeller(clinics);
     int bill = clinic->request(ItemType::PatientHealed, qty);
 
+    mutex.lock();
     if (bill > 0 && money >= bill && currentBeds + qty <= maxBeds) {
-        mutex.lock();
-
         money -= bill;
         ++currentBeds;
         ++stocks[ItemType::PatientHealed];
@@ -86,28 +79,28 @@ void Hospital::transferPatientsFromClinic() {
         // Ajoute un patient avec un temps de 5 jours
         healedPatientsDaysLeft.push_back(5);
 
-        mutex.unlock();
         interface->consoleAppendText(uniqueId, "Transferred a healed patient from the clinic.");
     }
+    mutex.unlock();
 }
 
 int Hospital::send(ItemType it, int qty, int bill) {
     // TODO
     // Vérifie si l'hôpital a les ressources nécessaires pour traiter un patient
-    if (maxBeds - currentBeds - qty >= 0 && money - bill >= 0) {
-        mutex.lock();
+    int nurseSalary = getEmployeeSalary(EmployeeType::Nurse);
+    mutex.lock();
+    if ((maxBeds - currentBeds >= qty) && (money >= bill + nurseSalary)) {
 
         currentBeds += qty;
         stocks[it] += qty;
-
         money -= bill;
-        money -= getEmployeeSalary(EmployeeType::Nurse);
-
+        money -= nurseSalary;
         nbHospitalised++;
+
         mutex.unlock();
         return bill;
     }
-
+    mutex.unlock();
     return 0;
 }
 

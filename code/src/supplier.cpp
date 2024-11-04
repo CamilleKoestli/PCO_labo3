@@ -17,13 +17,14 @@ Supplier::Supplier(int uniqueId, int fund, std::vector<ItemType> resourcesSuppli
 
 int Supplier::request(ItemType it, int qty) {
     // TODO
- if(stocks[it] >= qty){
-        mutex.lock();
+    mutex.lock();
+    if (stocks[it] >= qty) {
         stocks[it] -= qty;
-        money += getCostPerUnit(it)*qty;
+        money += getCostPerUnit(it) * qty;
         mutex.unlock();
-        return getCostPerUnit(it)*qty;
+        return getCostPerUnit(it) * qty;
     }
+    mutex.unlock();
     return 0;
 }
 
@@ -35,23 +36,25 @@ void Supplier::run() {
         int supplierCost = getEmployeeSalary(getEmployeeThatProduces(resourceSupplied));
         // TODO
 
+        mutex.lock();
         if (money >= supplierCost) {
             money -= supplierCost;
-            mutex.lock();
             stocks[resourceSupplied]++;
             nbSupplied++;
+
             mutex.unlock();
 
             // Simule un délai d'attente
             interface->simulateWork();
 
-            
+
             interface->consoleAppendText(uniqueId, QString("Imported %1 of %2.")
                                          .arg(1).arg(getItemName(resourceSupplied)));
         } else {
+            mutex.unlock();
             interface->consoleAppendText(uniqueId, "Insufficient funds to pay the employee.");
         }
-        
+
 
         /* Temps aléatoire borné qui simule l'attente du travail fini*/
         interface->updateFund(uniqueId, money);

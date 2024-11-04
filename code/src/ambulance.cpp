@@ -22,7 +22,8 @@ Ambulance::Ambulance(int uniqueId, int fund, std::vector<ItemType> resourcesSupp
 
 void Ambulance::sendPatient() {
     // TODO a checker
-    
+
+    mutex.lock();
     if (getFund() > 0 && stocks[ItemType::PatientSick] > 0) {
         int qty = 1;
         int toPay = getCostPerUnit(ItemType::PatientSick) * qty;
@@ -31,12 +32,10 @@ void Ambulance::sendPatient() {
         int bill = hospital->send(ItemType::PatientSick, qty, toPay);
 
         if (bill > 0 && getFund() > bill) {
-            mutex.lock();
             money += bill;
             stocks[ItemType::PatientSick] -= qty;
             nbTransfer++;
             money -= getEmployeeSalary(EmployeeType::Supplier);
-            mutex.unlock();
 
             interface->updateFund(uniqueId, money);
             interface->consoleAppendText(uniqueId, "Successfully transferred a patient to the hospital.");
@@ -45,8 +44,8 @@ void Ambulance::sendPatient() {
         }
     } else {
         interface->consoleAppendText(uniqueId, "Insufficient funds or no patients to transfer.");
-
     }
+    mutex.unlock();
 }
 
 void Ambulance::run() {
