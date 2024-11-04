@@ -55,6 +55,7 @@ void Ambulance::run() {
     while (!PcoThread::thisThread()->stopRequested()) {
         sendPatient();
 
+        // Simule un délai d'attente
         interface->simulateWork();
 
         interface->updateFund(uniqueId, money);

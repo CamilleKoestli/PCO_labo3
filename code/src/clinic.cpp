@@ -115,16 +115,16 @@ void Clinic::run() {
     while (!PcoThread::thisThread()->stopRequested()) {
         // Vérifie si la clinique a les ressources nécessaires pour traiter un patient
         if (verifyResources()) {
-            
+            // Traite un patient
             treatPatient();
             
         } else {
-            
+            // Sinon, commande des ressources
             orderResources();
           
         }
 
-        // Simule un délai de travail
+        // Simule un délai d'attente
         interface->simulateWork();
 
         // Met à jour les fonds et les stocks sur l'interface

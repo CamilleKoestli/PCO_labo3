@@ -87,6 +87,7 @@ void Hospital::transferPatientsFromClinic() {
         healedPatientsDaysLeft.push_back(5);
 
         mutex.unlock();
+        interface->consoleAppendText(uniqueId, "Transferred a healed patient from the clinic.");
     }
 }
 
@@ -118,7 +119,6 @@ void Hospital::run() {
 
     interface->consoleAppendText(uniqueId, "[START] Hospital routine");
 
-    // Boucle principale de la routine de l'hôpital
     while (!PcoThread::thisThread()->stopRequested()) {
         // Transfert des patients guéris des cliniques à l'hôpital
         transferPatientsFromClinic();
@@ -126,7 +126,6 @@ void Hospital::run() {
         // Libération des patients guéris ayant terminé leur convalescence
         freeHealedPatient();
 
-        // Mise à jour de l'interface pour afficher les fonds et les stocks
         interface->updateFund(uniqueId, money);
         interface->updateStock(uniqueId, &stocks);
 

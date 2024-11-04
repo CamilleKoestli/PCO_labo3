@@ -42,6 +42,7 @@ void Supplier::run() {
             nbSupplied++;
             mutex.unlock();
 
+            // Simule un délai d'attente
             interface->simulateWork();
 
             
