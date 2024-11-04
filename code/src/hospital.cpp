@@ -25,22 +25,23 @@ Hospital::Hospital(int uniqueId, int fund, int maxBeds)
 int Hospital::request(ItemType what, int qty) {
     // TODO
     mutex.lock();
-    bool requestSuccessful = false;
-
+    
     if (stocks[what] - qty >= 0) {
         int bill = qty * getCostPerUnit(what);
         stocks[what] -= qty;
 
-        money -= getEmployeeSalary(EmployeeType::Nurse);
+        currentBeds -= qty;
         money += bill;
 
         interface->updateFund(uniqueId, money);
-        requestSuccessful = true;
+        mutex.unlock();
+        return bill;
+        
     }
 
     mutex.unlock();
 
-    return requestSuccessful ? qty : 0;
+    return 0;
 }
 
 void Hospital::freeHealedPatient() {
