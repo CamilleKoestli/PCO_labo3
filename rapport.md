@@ -10,7 +10,7 @@ Chaque acteur est exécuté en tant que thread et doit interagir avec les autres
 
 ## Choix d'implémentation
 
-Le premier élément important à comprendre est que les ressouces et les patients ne peuvent être uniquement modifiés que par leur propriétaire, car ce sont des attributs privés. L'accès concurrent à ces variables est causé par les multiples entités dans différents threads qui demandent une transaction en parallèle. La transaction (lecture et modification des fonds et des ressources) doit être effectuée de manière atomique, c'est pourquoi nous avons utilisé un mutex par entité.
+Le premier élément important à comprendre est que les ressources et les patients ne peuvent être uniquement modifiés que par leur propriétaire, car ce sont des attributs privés. L'accès concurrent à ces variables est causé par les multiples entités dans différents threads qui demandent une transaction en parallèle. La transaction (lecture et modification des fonds et des ressources) doit être effectuée de manière atomique, c'est pourquoi nous avons utilisé un mutex par entité.
 
 ### Mutex
 
@@ -26,38 +26,41 @@ La Clinic est responsable de traiter les patients malades en fonction des ressou
 `Clinic::request`
 
 - Cette méthode permet à d’autres entités de demander des patients sains. La clinique vérifie que le type de patient demandé est bien `PatientHealed` et retourne la quantité demandée pour effectuer le transfert.
+- Si les conditions sont remplies, la clinique met à jour son stock et ses fonds, et retourne 1 pour indiquer que la demande est ok. Sinon, la méthode retourne 0.
+- La section critique est protégée par un mutex pour garantir une modification sûre des ressources et des fonds en cas d’accès concurrent.
 
 `Clinic::treatPatient()`
 
 - Cette méthode traite un patient malade pour le transformer en patient guéri, mais seulement si les ressources nécessaires sont disponibles (vérifiées par `verifyResources()`).
-- Dans cette méthode, un mutex protège l’accès aux variables critiques pour éviter les conflits lors de la mise à jour des stocks de patients malades et soignés. Le traitement est simulé par un appel à `interface->simulateWork()` qui représente le temps requis pour soigner un patient.
+- En cas de succès du traitement, le stock de `PatientHealed` est augmenté et celui de `PatientSick` est décrémenté. Le traitement est simulé par un appel à `interface->simulateWork()` qui représente le temps requis pour soigner un patient.
+- Dans cette méthode, un mutex protège la modification des stocks et des fonds, pour éviter les conflits de concurrence.
 
 `Clinic::orderResources()`
 
-- La clinique commande des ressources aux fournisseurs en cas de besoin. Si des ressources nécessaires sont épuisées, `orderResources()` choisit un fournisseur aléatoirement pour effectuer une commande d’une unité de la ressource manquante.
+- La clinique commande des ressources aux fournisseurs en cas de besoin. Si des ressources nécessaires sont épuisées et que les fonds sont suffisants, les ressources manquantes, comme Pill, Scalpel, et Syringe, sont commandées chez un fournisseurs aléatoires, et les patients malades peuvent être demandés aux hôpitaux.
 - La section critique est protégée par un mutex pour garantir que les modifications des stocks et des fonds se font sans interférence.
 
 `Clinic::run()`
 
-- La méthode `run()` est la boucle principale de la clinique, qui vérifie constamment si elle dispose de ressources suffisantes pour traiter un patient. Si les ressources sont disponibles, elle appelle `treatPatient()`. Dans le cas contraire, elle appelle `orderResources()` pour approvisionner les stocks.
+- La méthode `run()` est la boucle principale de la clinique, qui vérifie constamment si elle dispose de suffisamment de ressources pour traiter un patient. Si les ressources sont disponibles, elle appelle `treatPatient()`. Sinon, elle appelle `orderResources()` pour approvisionner les stocks.
 - La boucle continue tant que `stopRequest` est `false`, ce qui permet d’arrêter proprement la simulation lorsque le signal est émis.
 
 ### Ambulance
 
-L’Ambulance est chargée de transporter les patients malades vers les hôpitaux. 
+L’Ambulance est chargée de transporter les patients malades vers les hôpitaux.
 
 `Ambulance::sendPatient()`
 
-- Cette méthode sélectionne un hôpital au hasard parmi ceux disponibles et tente de transférer un patient malade. Avant de procéder, elle vérifie si l'hôpital a la capacité d’accueillir un nouveau patient et si le montant de la transaction peut être payé.
-- La méthode utilise un mutex pour sécuriser les modifications des attributs `money`, `stocks`, et `nbTransfer`, qui représentent respectivement les fonds, le stock de patients malades, et le nombre de transferts réalisés. Cette section critique garantit qu’aucun autre thread ne peut interférer pendant l’opération.
-- En cas de succès du transfert, le nombre de patients dans l’ambulance est décrémenté, les fonds sont mis à jour, et un message de confirmation est envoyé à l'interface utilisateur.
+- Cette méthode sélectionne un hôpital au hasard parmi ceux disponibles et tente de transférer un patient malade. Avant, elle vérifie si l'hôpital a la capacité d’accueillir un nouveau patient et si le montant de la transaction peut être payé.
+- Si le transfert est possible, le nombre de patients dans l’ambulance est décrémenté et les fonds sont mis à jour.
+- La méthode utilise un mutex pour sécuriser les modifications des attributs `money`, `stocks`, et `nbTransfer`.
 
 `Ambulance::run()`
 
-- Cette méthode constitue la boucle principale de l'ambulance, qui continue à exécuter la routine de transfert de patients tant que la variable `stopRequest` n’est pas activée (ce qui signifie que la simulation n’a pas reçu de signal d'arrêt).
-- La méthode vérifie d’abord s’il y a des patients malades dans le stock de l’ambulance. Si oui, elle appelle sendPatient() pour tenter un transfert. Elle simule ensuite une pause via interface->simulateWork() pour reproduire le temps de travail et met à jour les fonds et stocks via l'interface graphique.
+- Cette méthode est la boucle principale de l'ambulance, qui continue à exécuter la routine de transfert de patients tant que la variable `stopRequest` n’est pas activée.
+- La méthode vérifie d’abord s’il y a des patients malades dans le stock de l’ambulance. Si oui, elle appelle `sendPatient()` pour tenter un transfert.
 
-### Hopital
+### Hospital
 
 `Hospital::freeHealedPatient()`
 
