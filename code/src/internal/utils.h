@@ -29,7 +29,7 @@
 
 #define INITIAL_PATIENT_SICK 900
 
-#define MAX_BEDS_PER_HOSTPITAL 35
+#define MAX_BEDS_PER_HOSPITAL 35
 
 std::vector<Ambulance*> createAmbulances(int nbAmbulances, int idStart);
 std::vector<Supplier*> createSuppliers(int nbSuppliers, int idStart);

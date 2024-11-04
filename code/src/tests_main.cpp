@@ -36,7 +36,7 @@ void requestPatients(Hospital& hospital, ItemType itemType, std::atomic<int>& to
 TEST(SellerTest, TestHospitals) {
     const int uniqueId = 0;
     const int initialFund = 20000;
-    const unsigned int maxBeds = MAX_BEDS_PER_HOSTPITAL;
+    const unsigned int maxBeds = MAX_BEDS_PER_HOSPITAL;
     const unsigned int nbThreads = 4;
     int endFund = 0;
     std::atomic<int> totalPaid = 0;
@@ -72,3 +72,5 @@ int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }
+
+

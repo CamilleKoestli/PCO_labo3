@@ -90,13 +90,13 @@ std::vector<Clinic*> createClinics(int nbClinics, int idStart) {
 
 std::vector<Hospital*> createHospitals(int nbHospital, int idStart) {
     if(nbHospital < 1){
-        qInfo() << "Cannot launch the programm without any hospitalr";
+        qInfo() << "Cannot launch the programm without any hospital";
         exit(-1);
     }
     std::vector<Hospital*> hospitals;
 
     for(int i = 0; i < nbHospital; ++i){
-        hospitals.push_back(new Hospital(i + idStart, HOSPITALS_FUND, MAX_BEDS_PER_HOSTPITAL));
+        hospitals.push_back(new Hospital(i + idStart, HOSPITALS_FUND, MAX_BEDS_PER_HOSPITAL));
     }
 
     return hospitals;
