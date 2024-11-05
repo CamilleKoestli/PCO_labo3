@@ -36,7 +36,6 @@ void Ambulance::sendPatient() {
             ++nbTransfer;
 
             money -= salarySupplier;
-            mutex.unlock();
 
             interface->consoleAppendText(uniqueId, "Successfully transferred a patient to the hospital.");
         }
