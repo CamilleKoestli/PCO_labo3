@@ -20,6 +20,7 @@ int Supplier::request(ItemType it, int qty) {
     if (stocks[it] >= qty) {
         stocks[it] -= qty;
         money += getCostPerUnit(it) * qty;
+
         mutex.unlock();
         return getCostPerUnit(it) * qty;
     }
@@ -34,20 +35,21 @@ void Supplier::run() {
         ItemType resourceSupplied = getRandomItemFromStock();
         int supplierSalary = getEmployeeSalary(getEmployeeThatProduces(resourceSupplied));
 
-        mutex.lock();
+    
         // Si l'argent est suffisant pour payer le salaire de l'employé
         if (money - supplierSalary >= 0) {
+            mutex.lock();
             money -= supplierSalary;
             stocks[resourceSupplied]++;
             nbSupplied++;
             mutex.unlock();
+            
             // Simule un délai d'attente
             interface->simulateWork();
             interface->consoleAppendText(uniqueId, QString("Imported %1 of %2.").arg(1).arg(getItemName(resourceSupplied)));
         // Sinon, affiche un message d'erreur
         } else {
             interface->consoleAppendText(uniqueId, "Insufficient funds to pay the employee.");
-            mutex.unlock();
         }
 
         interface->updateFund(uniqueId, money);

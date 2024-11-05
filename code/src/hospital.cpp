@@ -31,7 +31,6 @@ int Hospital::request(ItemType what, int qty) {
         currentBeds -= qty;
         money += bill;
 
-        interface->updateFund(uniqueId, money);
         mutex.unlock();
         return bill;
     }
@@ -83,6 +82,7 @@ void Hospital::transferPatientsFromClinic() {
 
 int Hospital::send(ItemType it, int qty, int bill) {
     int nurseSalary = getEmployeeSalary(EmployeeType::Nurse);
+
     mutex.lock();
     if ((maxBeds - currentBeds >= qty) && (money >= bill + nurseSalary)) {
 

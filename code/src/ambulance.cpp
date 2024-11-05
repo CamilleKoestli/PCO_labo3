@@ -36,13 +36,13 @@ void Ambulance::sendPatient() {
             ++nbTransfer;
 
             money -= salarySupplier;
+            mutex.unlock();
 
             interface->consoleAppendText(uniqueId, "Successfully transferred a patient to the hospital.");
         }
-    } else {
-        interface->consoleAppendText(uniqueId, "Insufficient funds or no patients to transfer.");
-    }
+    } 
     mutex.unlock();
+    interface->consoleAppendText(uniqueId, "Insufficient funds or no patients to transfer.");
 }
 
 void Ambulance::run() {

@@ -32,6 +32,7 @@ int Clinic::request(ItemType what, int qty) {
     if (bill > 0 && stocks[what] > 0) {
         stocks[what] -= qty;
         money += bill;
+
         mutex.unlock();
         return bill;
     }
@@ -50,7 +51,6 @@ void Clinic::treatPatient() {
         }
         mutex.unlock();
 
-        // Simule un délai d'attente
         interface->simulateWork();
 
         mutex.lock();
@@ -58,9 +58,11 @@ void Clinic::treatPatient() {
         ++nbTreated;
         money -= salaryDoctor;
         mutex.unlock();
-        
-    } 
-    interface->consoleAppendText(uniqueId, "Clinic has healed a patient.");
+
+        interface->consoleAppendText(uniqueId, "Clinic has healed a patient.");
+    } else {
+        interface->consoleAppendText(uniqueId, "Clinic lacks resources or funds to treat a patient.");
+    }
 }
 
 void Clinic::orderResources() {
