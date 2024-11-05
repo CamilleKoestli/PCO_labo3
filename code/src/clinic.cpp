@@ -29,16 +29,16 @@ int Clinic::request(ItemType what, int qty) {
     // TODO
     int bill = getEmployeeSalary(getEmployeeThatProduces(what));
 
-    mutex.lock();
     if (bill > 0) {
+        mutex.lock();
         if (stocks[what] >= qty) {
             stocks[what] -= qty;
             money += bill;
             mutex.unlock();
             return 1;
         }
+        mutex.unlock();
     }
-    mutex.unlock();
     return 0;
 }
 

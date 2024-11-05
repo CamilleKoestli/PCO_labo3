@@ -41,15 +41,16 @@ void Supplier::run() {
             money -= supplierCost;
             stocks[resourceSupplied]++;
             nbSupplied++;
-
+            mutex.unlock();
             // Simule un délai d'attente
             interface->simulateWork();
             interface->consoleAppendText(uniqueId, QString("Imported %1 of %2.").arg(1).arg(getItemName(resourceSupplied)));
-            mutex.unlock();
+
         } else {
             interface->consoleAppendText(uniqueId, "Insufficient funds to pay the employee.");
-            mutex.unlock();
         }
+        mutex.unlock();
+
         /* Temps aléatoire borné qui simule l'attente du travail fini*/
         interface->updateFund(uniqueId, money);
         interface->updateStock(uniqueId, &stocks);
