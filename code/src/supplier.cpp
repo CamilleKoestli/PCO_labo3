@@ -40,8 +40,8 @@ void Supplier::run() {
         mutex.lock();
         if (money >= supplierSalary) {
             money -= supplierSalary;
-            stocks[resourceSupplied]++;
-            nbSupplied++;
+            ++stocks[resourceSupplied];
+            ++nbSupplied;
             mutex.unlock();
             
             // Simule un délai d'attente
