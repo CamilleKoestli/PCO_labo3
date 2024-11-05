@@ -128,7 +128,7 @@ Utils::Utils(int nbSupplier, int nbClinic, int nbHospital) {
     std::vector<Seller*> tmpSuppliers;
     std::vector<Seller*> tmpClinics;
     
-    // Préparation des hopitaux, ils ont besoin des clincs
+    // Préparation des hopitaux, ils ont besoin des clinics
     for(auto& h : hospitals) {
         std::vector<Seller*> tmpClinics(clinics.begin() + countClinic, clinics.begin() + countClinic + clinicsByHospital);
         tmpClinics.insert(tmpClinics.end(), clinics.end() - clinicsShared, clinics.end());

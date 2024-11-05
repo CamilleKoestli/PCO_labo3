@@ -37,7 +37,7 @@ void Supplier::run() {
 
     
         // Si l'argent est suffisant pour payer le salaire de l'employé
-        if (money - supplierSalary >= 0) {
+        if (money >= supplierSalary) {
             mutex.lock();
             money -= supplierSalary;
             stocks[resourceSupplied]++;
