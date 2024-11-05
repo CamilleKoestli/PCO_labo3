@@ -28,8 +28,9 @@ bool Clinic::verifyResources() {
 int Clinic::request(ItemType what, int qty) {
     int bill = getEmployeeSalary(getEmployeeThatProduces(what));
 
+    mutex.lock();
     if (bill > 0) {
-        mutex.lock();
+       
         if (stocks[what] > 0) {
             stocks[what] -= qty;
             money += bill;
@@ -88,6 +89,8 @@ void Clinic::orderResources() {
             bill = chooseRandomSeller(hospitals)->request(resource, qty);
         } else if (resource != ItemType::PatientHealed) {
             bill = chooseRandomSeller(suppliers)->request(resource, qty);
+        } else {
+            interface->consoleAppendText(uniqueId, QString("Resource type %1 not handled for ordering.").arg(getItemName(resource)));
         }
 
         if (bill > 0) {

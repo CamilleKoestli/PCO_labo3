@@ -47,8 +47,8 @@ void Supplier::run() {
         // Sinon, affiche un message d'erreur
         } else {
             interface->consoleAppendText(uniqueId, "Insufficient funds to pay the employee.");
+            mutex.unlock();
         }
-        mutex.unlock();
 
         interface->updateFund(uniqueId, money);
         interface->updateStock(uniqueId, &stocks);

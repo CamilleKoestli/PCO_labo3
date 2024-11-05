@@ -38,7 +38,7 @@ void Ambulance::sendPatient() {
 
             interface->consoleAppendText(uniqueId, "Successfully transferred a patient to the hospital.");
         }
-    }else {
+    } else {
         interface->consoleAppendText(uniqueId, "Insufficient funds or no patients to transfer.");
     }
     mutex.unlock();
