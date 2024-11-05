@@ -40,6 +40,7 @@ int Hospital::request(ItemType what, int qty) {
 
 void Hospital::freeHealedPatient() {
     mutex.lock();
+    
     for (auto it = healedPatientsDaysLeft.begin(); it != healedPatientsDaysLeft.end(); ) {
         if (*it > 0) {
             --(*it);  // Décrémente les jours restants pour ce patient

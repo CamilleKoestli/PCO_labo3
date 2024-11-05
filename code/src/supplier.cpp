@@ -37,8 +37,8 @@ void Supplier::run() {
 
     
         // Si l'argent est suffisant pour payer le salaire de l'employé
+        mutex.lock();
         if (money >= supplierSalary) {
-            mutex.lock();
             money -= supplierSalary;
             stocks[resourceSupplied]++;
             nbSupplied++;
@@ -49,6 +49,7 @@ void Supplier::run() {
             interface->consoleAppendText(uniqueId, QString("Imported %1 of %2.").arg(1).arg(getItemName(resourceSupplied)));
         // Sinon, affiche un message d'erreur
         } else {
+            mutex.unlock();
             interface->consoleAppendText(uniqueId, "Insufficient funds to pay the employee.");
         }
 

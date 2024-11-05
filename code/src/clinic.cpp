@@ -17,11 +17,14 @@ Clinic::Clinic(int uniqueId, int fund, std::vector<ItemType> resourcesNeeded)
 }
 
 bool Clinic::verifyResources() {
+    mutex.lock();
     for (auto item: resourcesNeeded) {
         if (stocks[item] == 0) {
+            mutex.unlock();
             return false;
         }
     }
+    mutex.unlock();
     return true;
 }
 
