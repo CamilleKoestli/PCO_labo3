@@ -26,7 +26,6 @@ bool Clinic::verifyResources() {
 }
 
 int Clinic::request(ItemType what, int qty) {
-    // TODO
     int bill = getEmployeeSalary(getEmployeeThatProduces(what));
 
     if (bill > 0) {
@@ -35,7 +34,7 @@ int Clinic::request(ItemType what, int qty) {
             stocks[what] -= qty;
             money += bill;
             mutex.unlock();
-            return 1;
+            return bill;
         }
         mutex.unlock();
     }
@@ -43,11 +42,10 @@ int Clinic::request(ItemType what, int qty) {
 }
 
 void Clinic::treatPatient() {
-    // TODO
     int salaryDoctor = getEmployeeSalary(EmployeeType::Doctor);
 
     mutex.lock();
-    if (money - salaryDoctor >= 0) {
+    if (money >= salaryDoctor ) {
         bool hasAllRessources = true;
         for (auto &resource: resourcesNeeded) {
             if (stocks[resource] <= 0) {
@@ -77,28 +75,23 @@ void Clinic::treatPatient() {
 }
 
 void Clinic::orderResources() {
-    // TODO
-    int qty = 1; // Quantité par ressource commandée
+    int qty = 1; 
 
     for (const auto& resource : resourcesNeeded) {
-        // Vérifie que la clinique dispose des fonds nécessaires
         int cost = qty * getCostPerUnit(resource);
         if (cost > money) {
-            continue; // Passe à la ressource suivante si les fonds sont insuffisants
+            break; 
         }
 
         int bill = 0;
         if (resource == ItemType::PatientSick) {
-            // Demande de patients malades aux hôpitaux
             bill = chooseRandomSeller(hospitals)->request(resource, qty);
         } else if (resource != ItemType::PatientHealed) {
-            // Demande d'autres ressources aux fournisseurs, sauf les patients guéris
             bill = chooseRandomSeller(suppliers)->request(resource, qty);
         }
 
-        // Met à jour les stocks et fonds en cas de succès de la demande
         if (bill > 0) {
-            std::scoped_lock lock(mutex); // Gestion automatique du déverrouillage du mutex
+            std::scoped_lock lock(mutex);
             money -= bill;
             stocks[resource] += qty;
         }
@@ -115,7 +108,6 @@ void Clinic::run() {
 
     // Boucle de routine, qui s'exécute tant que l'arrêt n'est pas demandé
     while (!PcoThread::thisThread()->stopRequested()) {
-        // Vérifie si la clinique a les ressources nécessaires pour traiter un patient
         if (verifyResources()) {
             // Traite un patient
             treatPatient();
@@ -125,7 +117,6 @@ void Clinic::run() {
             orderResources();
           
         }
-
         // Simule un délai d'attente
         interface->simulateWork();
 

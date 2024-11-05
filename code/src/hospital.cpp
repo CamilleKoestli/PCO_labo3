@@ -23,7 +23,6 @@ Hospital::Hospital(int uniqueId, int fund, int maxBeds)
 }
 
 int Hospital::request(ItemType what, int qty) {
-    // TODO
     int bill = qty * getCostPerUnit(what);
 
     mutex.lock();
@@ -41,7 +40,6 @@ int Hospital::request(ItemType what, int qty) {
 }
 
 void Hospital::freeHealedPatient() {
-    //TODO
     mutex.lock();
     for (auto it = healedPatientsDaysLeft.begin(); it != healedPatientsDaysLeft.end(); ) {
         if (*it > 0) {
@@ -65,7 +63,6 @@ void Hospital::freeHealedPatient() {
 }
 
 void Hospital::transferPatientsFromClinic() {
-    //TODO
     int qty = 1;
     Seller* clinic = chooseRandomSeller(clinics);
     int bill = clinic->request(ItemType::PatientHealed, qty);
@@ -85,10 +82,7 @@ void Hospital::transferPatientsFromClinic() {
 }
 
 int Hospital::send(ItemType it, int qty, int bill) {
-    // TODO
-    // Vérifie si l'hôpital a les ressources nécessaires pour traiter un patient
     int nurseSalary = getEmployeeSalary(EmployeeType::Nurse);
-    
     mutex.lock();
     if ((maxBeds - currentBeds >= qty) && (money >= bill + nurseSalary)) {
 

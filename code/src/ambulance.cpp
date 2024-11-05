@@ -21,11 +21,11 @@ Ambulance::Ambulance(int uniqueId, int fund, std::vector<ItemType> resourcesSupp
 }
 
 void Ambulance::sendPatient() {
-    // TODO a checker
     mutex.lock();
     auto hospital = chooseRandomSeller(hospitals);
     int patient = 1;
     int bill = getCostPerUnit(ItemType::PatientSick);
+    int salarySupplier = getEmployeeSalary(EmployeeType::Supplier);
     
     if (stocks[ItemType::PatientSick] >= patient) {
         if (hospital->send(ItemType::PatientSick, patient, bill)) {
@@ -34,7 +34,8 @@ void Ambulance::sendPatient() {
             stocks[ItemType::PatientSick] -= patient;
             ++nbTransfer;
 
-            interface->updateFund(uniqueId, money);
+            money -= salarySupplier;
+
             interface->consoleAppendText(uniqueId, "Successfully transferred a patient to the hospital.");
         }
     }else {
@@ -47,6 +48,7 @@ void Ambulance::run() {
     interface->consoleAppendText(uniqueId, "[START] Ambulance routine");
 
     while (!PcoThread::thisThread()->stopRequested()) {
+        // Envoie un patient à l'hôpital
         sendPatient();
 
         // Simule un délai d'attente

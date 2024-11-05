@@ -15,8 +15,7 @@ Supplier::Supplier(int uniqueId, int fund, std::vector<ItemType> resourcesSuppli
 }
 
 
-int Supplier::request(ItemType it, int qty) {
-    // TODO
+int Supplier::request(ItemType it, int qty) {   
     mutex.lock();
     if (stocks[it] >= qty) {
         stocks[it] -= qty;
@@ -33,29 +32,27 @@ void Supplier::run() {
 
     while (!PcoThread::thisThread()->stopRequested()) {
         ItemType resourceSupplied = getRandomItemFromStock();
-        int supplierCost = getEmployeeSalary(getEmployeeThatProduces(resourceSupplied));
-        // TODO
+        int supplierSalary = getEmployeeSalary(getEmployeeThatProduces(resourceSupplied));
 
         mutex.lock();
-        if (money - supplierCost >= 0) {
-            money -= supplierCost;
+        // Si l'argent est suffisant pour payer le salaire de l'employé
+        if (money - supplierSalary >= 0) {
+            money -= supplierSalary;
             stocks[resourceSupplied]++;
             nbSupplied++;
             mutex.unlock();
             // Simule un délai d'attente
             interface->simulateWork();
             interface->consoleAppendText(uniqueId, QString("Imported %1 of %2.").arg(1).arg(getItemName(resourceSupplied)));
-
+        // Sinon, affiche un message d'erreur
         } else {
             interface->consoleAppendText(uniqueId, "Insufficient funds to pay the employee.");
         }
         mutex.unlock();
 
-        /* Temps aléatoire borné qui simule l'attente du travail fini*/
         interface->updateFund(uniqueId, money);
         interface->updateStock(uniqueId, &stocks);
 
-        //TODO
     }
     interface->consoleAppendText(uniqueId, "[STOP] Supplier routine");
 }
