@@ -21,12 +21,13 @@ Ambulance::Ambulance(int uniqueId, int fund, std::vector<ItemType> resourcesSupp
 }
 
 void Ambulance::sendPatient() {
-    mutex.lock();
+    
     auto hospital = chooseRandomSeller(hospitals);
     int patient = 1;
     int bill = getCostPerUnit(ItemType::PatientSick);
     int salarySupplier = getEmployeeSalary(EmployeeType::Supplier);
     
+    mutex.lock();
     if (stocks[ItemType::PatientSick] >= patient) {
         if (hospital->send(ItemType::PatientSick, patient, bill)) {
             money += bill;

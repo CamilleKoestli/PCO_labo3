@@ -27,57 +27,46 @@ bool Clinic::verifyResources() {
 
 int Clinic::request(ItemType what, int qty) {
     int bill = getEmployeeSalary(getEmployeeThatProduces(what));
-
+    
     mutex.lock();
-    if (bill > 0) {
-       
-        if (stocks[what] > 0) {
-            stocks[what] -= qty;
-            money += bill;
-            mutex.unlock();
-            return bill;
-        }
+    if (bill > 0 && stocks[what] > 0) {
+        stocks[what] -= qty;
+        money += bill;
         mutex.unlock();
+        return bill;
     }
+    
+    mutex.unlock();
     return 0;
 }
 
 void Clinic::treatPatient() {
     int salaryDoctor = getEmployeeSalary(EmployeeType::Doctor);
-
-    mutex.lock();
-    if (money >= salaryDoctor ) {
-        bool hasAllRessources = true;
-        for (auto &resource: resourcesNeeded) {
-            if (stocks[resource] <= 0) {
-                hasAllRessources = false;
-                break;
-            }
+    
+    if (money >= salaryDoctor) {
+        mutex.lock();
+        for (const auto &resource : resourcesNeeded) {
+            --stocks[resource];
         }
-        if (hasAllRessources) {
-            for (const auto &resource: resourcesNeeded) {
-                --stocks[resource];
-            }
-            ++stocks[ItemType::PatientHealed];
-            ++nbTreated;
-            money -= salaryDoctor;
+        mutex.unlock();
 
-            interface->simulateWork();
-            interface->consoleAppendText(uniqueId, "Clinic has healed a patient.");
-        } else {
-            interface->consoleAppendText(uniqueId, "Clinic lacks resources to treat a patient.");
-        }
-    } else {
-        interface->consoleAppendText(uniqueId, "Clinic does not have enough funds to pay the doctor.");
-    }
-    interface->updateStock(uniqueId, &stocks);
-    interface->updateFund(uniqueId, money);
-    mutex.unlock();
+        // Simule un délai d'attente
+        interface->simulateWork();
+
+        mutex.lock();
+        ++stocks[ItemType::PatientHealed];
+        ++nbTreated;
+        money -= salaryDoctor;
+        mutex.unlock();
+        
+    } 
+    interface->consoleAppendText(uniqueId, "Clinic has healed a patient.");
 }
 
 void Clinic::orderResources() {
     int qty = 1; 
 
+    mutex.lock();
     for (const auto& resource : resourcesNeeded) {
         int cost = qty * getCostPerUnit(resource);
         if (cost > money) {
@@ -94,12 +83,11 @@ void Clinic::orderResources() {
         }
 
         if (bill > 0) {
-            mutex.lock();
             money -= bill;
             stocks[resource] += qty;
-            mutex.unlock();
         }
     }
+    mutex.unlock();
 }
 
 void Clinic::run() {
