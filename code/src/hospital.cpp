@@ -82,15 +82,13 @@ void Hospital::transferPatientsFromClinic() {
 }
 
 int Hospital::send(ItemType it, int qty, int bill) {
-    int nurseSalary = getEmployeeSalary(EmployeeType::Nurse);
-
     mutex.lock();
-    if ((maxBeds - currentBeds >= qty) && (money >= bill + nurseSalary)) {
+    if ((maxBeds - currentBeds >= qty) && (money >= bill + NURSE_COST)) {
 
         currentBeds += qty;
         stocks[it] += qty;
         money -= bill;
-        money -= nurseSalary;
+        money -= NURSE_COST;
         ++nbHospitalised;
 
         mutex.unlock();

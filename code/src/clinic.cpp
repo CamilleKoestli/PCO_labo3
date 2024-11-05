@@ -45,17 +45,15 @@ int Clinic::request(ItemType what, int qty) {
 }
 
 void Clinic::treatPatient() {
-    int salaryDoctor = getEmployeeSalary(EmployeeType::Doctor);
-    
     mutex.lock();
-    if (money >= salaryDoctor) {
+    if (money >= DOCTOR_COST) {
         for (const auto &resource : resourcesNeeded) {
             --stocks[resource];
         }
 
         ++stocks[ItemType::PatientHealed];
         ++nbTreated;
-        money -= salaryDoctor;
+        money -= DOCTOR_COST;
         
         mutex.unlock();
         

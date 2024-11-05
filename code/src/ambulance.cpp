@@ -25,7 +25,6 @@ void Ambulance::sendPatient() {
     auto hospital = chooseRandomSeller(hospitals);
     int patient = 1;
     int bill = getCostPerUnit(ItemType::PatientSick);
-    int salarySupplier = getEmployeeSalary(EmployeeType::Supplier);
     
     mutex.lock();
     if (stocks[ItemType::PatientSick] >= patient) {
@@ -35,7 +34,7 @@ void Ambulance::sendPatient() {
             stocks[ItemType::PatientSick] -= patient;
             ++nbTransfer;
 
-            money -= salarySupplier;
+            money -= SUPPLIER_COST;
 
             interface->consoleAppendText(uniqueId, "Successfully transferred a patient to the hospital.");
         }
