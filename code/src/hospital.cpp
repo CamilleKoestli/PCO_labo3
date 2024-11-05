@@ -88,6 +88,7 @@ int Hospital::send(ItemType it, int qty, int bill) {
     // TODO
     // Vérifie si l'hôpital a les ressources nécessaires pour traiter un patient
     int nurseSalary = getEmployeeSalary(EmployeeType::Nurse);
+    
     mutex.lock();
     if ((maxBeds - currentBeds >= qty) && (money >= bill + nurseSalary)) {
 
@@ -95,7 +96,7 @@ int Hospital::send(ItemType it, int qty, int bill) {
         stocks[it] += qty;
         money -= bill;
         money -= nurseSalary;
-        nbHospitalised++;
+        ++nbHospitalised;
 
         mutex.unlock();
         return bill;

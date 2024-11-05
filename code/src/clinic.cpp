@@ -31,7 +31,7 @@ int Clinic::request(ItemType what, int qty) {
 
     if (bill > 0) {
         mutex.lock();
-        if (stocks[what] >= qty) {
+        if (stocks[what] > 0) {
             stocks[what] -= qty;
             money += bill;
             mutex.unlock();
@@ -44,10 +44,10 @@ int Clinic::request(ItemType what, int qty) {
 
 void Clinic::treatPatient() {
     // TODO
-    int salary = getEmployeeSalary(getEmployeeThatProduces(ItemType::PatientHealed));
+    int salaryDoctor = getEmployeeSalary(EmployeeType::Doctor);
 
     mutex.lock();
-    if (money >= salary) {
+    if (money - salaryDoctor >= 0) {
         bool hasAllRessources = true;
         for (auto &resource: resourcesNeeded) {
             if (stocks[resource] <= 0) {
@@ -57,11 +57,11 @@ void Clinic::treatPatient() {
         }
         if (hasAllRessources) {
             for (const auto &resource: resourcesNeeded) {
-                stocks[resource]--;
+                --stocks[resource];
             }
-            stocks[ItemType::PatientHealed]++;
-            nbTreated++;
-            money -= salary;
+            ++stocks[ItemType::PatientHealed];
+            ++nbTreated;
+            money -= salaryDoctor;
 
             interface->simulateWork();
             interface->consoleAppendText(uniqueId, "Clinic has healed a patient.");
@@ -78,30 +78,31 @@ void Clinic::treatPatient() {
 
 void Clinic::orderResources() {
     // TODO
-    auto randHospital = chooseRandomSeller(hospitals);
-    auto randSupplier = chooseRandomSeller(suppliers);
-    int qty = 1;
+    int qty = 1; // Quantité par ressource commandée
 
-    mutex.lock();
-    if (money >= NURSE_COST) {
-        if (randHospital->request(ItemType::PatientSick, qty)) {
-            stocks[ItemType::PatientSick] += qty;
-            money -= NURSE_COST * qty;
+    for (const auto& resource : resourcesNeeded) {
+        // Vérifie que la clinique dispose des fonds nécessaires
+        int cost = qty * getCostPerUnit(resource);
+        if (cost > money) {
+            continue; // Passe à la ressource suivante si les fonds sont insuffisants
+        }
+
+        int bill = 0;
+        if (resource == ItemType::PatientSick) {
+            // Demande de patients malades aux hôpitaux
+            bill = chooseRandomSeller(hospitals)->request(resource, qty);
+        } else if (resource != ItemType::PatientHealed) {
+            // Demande d'autres ressources aux fournisseurs, sauf les patients guéris
+            bill = chooseRandomSeller(suppliers)->request(resource, qty);
+        }
+
+        // Met à jour les stocks et fonds en cas de succès de la demande
+        if (bill > 0) {
+            std::scoped_lock lock(mutex); // Gestion automatique du déverrouillage du mutex
+            money -= bill;
+            stocks[resource] += qty;
         }
     }
-
-    for (auto item : resourcesNeeded) {
-        int itemCost = getCostPerUnit(item) * qty;
-        if (money >= itemCost) {
-            if (randSupplier->request(item, qty)) {
-                stocks[item] += qty;
-                money -= getCostPerUnit(item) * qty;
-            }
-        }
-    }
-    mutex.unlock();
-
-    interface->updateStock(uniqueId, &stocks);
 }
 
 void Clinic::run() {

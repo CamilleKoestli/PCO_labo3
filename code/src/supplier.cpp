@@ -37,7 +37,7 @@ void Supplier::run() {
         // TODO
 
         mutex.lock();
-        if (money >= supplierCost) {
+        if (money - supplierCost >= 0) {
             money -= supplierCost;
             stocks[resourceSupplied]++;
             nbSupplied++;

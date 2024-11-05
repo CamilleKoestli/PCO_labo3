@@ -25,21 +25,14 @@ void Ambulance::sendPatient() {
     mutex.lock();
     auto hospital = chooseRandomSeller(hospitals);
     int patient = 1;
-    int toPay = getCostPerUnit(ItemType::PatientSick);
-    int driverSalary = TRANSFER_COST;
-
+    int bill = getCostPerUnit(ItemType::PatientSick);
+    
     if (stocks[ItemType::PatientSick] >= patient) {
-        if (hospital->send(ItemType::PatientSick, patient, toPay)) {
-            money += toPay;
-
-            if (money >= driverSalary) {
-                money -= driverSalary;
-            } else {
-                interface->consoleAppendText(uniqueId, "Failed to transfer a patient: no available beds or insufficient funds.");
-            }
+        if (hospital->send(ItemType::PatientSick, patient, bill)) {
+            money += bill;
 
             stocks[ItemType::PatientSick] -= patient;
-            nbTransfer++;
+            ++nbTransfer;
 
             interface->updateFund(uniqueId, money);
             interface->consoleAppendText(uniqueId, "Successfully transferred a patient to the hospital.");
