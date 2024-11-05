@@ -37,8 +37,8 @@ int Clinic::request(ItemType what, int qty) {
             mutex.unlock();
             return 1;
         }
-        mutex.unlock();
     }
+    mutex.unlock();
     return 0;
 }
 
@@ -82,13 +82,11 @@ void Clinic::orderResources() {
     auto randSupplier = chooseRandomSeller(suppliers);
     int qty = 1;
 
-    int nurseSalary = getEmployeeSalary(EmployeeType::Nurse);
-
     mutex.lock();
-    if (money >= nurseSalary) {
+    if (money >= NURSE_COST) {
         if (randHospital->request(ItemType::PatientSick, qty)) {
             stocks[ItemType::PatientSick] += qty;
-            money -= nurseSalary * qty;
+            money -= NURSE_COST * qty;
         }
     }
 
