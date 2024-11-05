@@ -91,9 +91,10 @@ void Clinic::orderResources() {
         }
 
         if (bill > 0) {
-            std::scoped_lock lock(mutex);
+            mutex.lock();
             money -= bill;
             stocks[resource] += qty;
+            mutex.unlock();
         }
     }
 }
